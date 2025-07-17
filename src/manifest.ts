@@ -1,6 +1,13 @@
-export const manifest = {
-  name: "care_diet_fe",
-  version: "0.0.0"
+import { lazy } from "react";
+
+const manifest = {
+  plugin: "care_diet_fe",
+  routes: {
+    "/facility/:facilityId/services": lazy(() => import("./pages/services")),
+  },
+  encounterTabs: {
+    nutrition_orders: lazy(() => import("./components/encounter-tabs/NutritionOrdersTab")),
+  },
 };
 
-export default manifest; 
+export default manifest;
