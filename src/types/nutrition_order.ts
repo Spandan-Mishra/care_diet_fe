@@ -1,17 +1,14 @@
-export interface NutritionOrder {
+export type NutritionOrder = {
   id: string;
-  encounter: string;
-  patient: string;
-  prescribed_by: string;
-  facility: string;
-  location: string;
+  patient: any; // Simplified for this example
+  prescribed_by: any;
+  facility: any;
+  location: any;
+  encounter: any;
   service_type: string;
-  products: Array<{
-    id: string;
-    name: string;
-  }>;
+  products: any[];
   datetime: string;
   status: string;
-  schedule: string;
-  note?: string;
-} 
+  schedule: { [key: string]: any }; 
+  note: string | null;
+};

@@ -1,3 +1,10 @@
 {
-  "no_nutrition_orders_found": "No Nutrition Orders Found"
-} 
+  "loading": "Loading...",
+  "no_nutrition_orders_found": "No Nutrition Orders Found",
+  "products": "Products",
+  "status": "Status",
+  "schedule": "Schedule",
+  "datetime": "Date & Time",
+  "note": "Note",
+  "no_data_placeholder": "-"
+}
