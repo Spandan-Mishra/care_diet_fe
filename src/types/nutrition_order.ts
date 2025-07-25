@@ -1,6 +1,6 @@
 export type NutritionOrder = {
   id: string;
-  patient: any; // Simplified for this example
+  patient: any;
   prescribed_by: any;
   facility: any;
   location: any;
