@@ -1,88 +1,79 @@
-import React, { useState } from "react";
-import { useTranslation } from "react-i18next";
+// src/components/dashboards/DieticianDashboard.tsx
+
+import React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useParams } from "react-router-dom";
-import { dietApi, type NutritionIntakeCreate, type NutritionOrderCreate,  } from "@/api/dietApi";
+import { dietApi, type NutritionOrderCreate } from "../api/dietApi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { I18NNAMESPACE } from "@/types/namespace";  
+
+interface DieticianDashboardProps {
+  facilityId: string;
+}
 
 interface EncounterForDietician {
   id: string;
-  patient: {
-    id: string;
-    name: string;
-  };
-  current_location: {
-    id: string;
-  };
+  patient: { id: string; name: string };
+  current_location: { id: string };
   status: string;
 }
 
-const DieticianDashboard: React.FC = () => {
-  const { facilityId } = useParams<{ facilityId: string }>();
-  const { t } = useTranslation(I18NNAMESPACE);
+const DieticianDashboard: React.FC<DieticianDashboardProps> = ({ facilityId }) => {
   const queryClient = useQueryClient();
-  const [selectedEncounterId, setSelectedEncounterId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["dietician_orders", facilityId],
+    queryKey: ["dietician_pending_orders", facilityId],
     queryFn: async () => {
-      if (!facilityId) return { results: [] };
       const params = new URLSearchParams({ facility: facilityId });
-      const res = await fetch(`${dietApi.listEncountersForDietician.path}?${params}`);
+      const res = await fetch(`${dietApi.listDieticianOrders.path}?${params}`);
+      if (!res.ok) throw new Error("Failed to fetch encounters");
       return res.json() as Promise<{ results: EncounterForDietician[] }>;
     },
+    enabled: !!facilityId,
   });
 
   const createOrderMutation = useMutation({
-     mutationFn: async (newOrder: NutritionOrderCreate) => { 
-      const res = await fetch(dietApi.createMealOrder.path, {
+    mutationFn: (newOrder: NutritionOrderCreate) =>
+      fetch(dietApi.createMealOrder.path, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json"},
         body: JSON.stringify(newOrder),
-      });
-      if (!res.ok) {
-        throw new Error("Failed to create order");
-      }
-      return res.json();
-    },
+      }).then((res) => {
+        if (!res.ok) throw new Error("Failed to create order");
+        return res.json();
+      }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["dietician_orders", facilityId] });
+      queryClient.invalidateQueries({ queryKey: ["dietician_pending_orders", facilityId] });
       alert("Order created successfully!");
-      setSelectedEncounterId(null); 
-    },
-    onError: (error) => {
-      alert(`Error: ${error.message}`);
     },
   });
 
   const handleCreateOrder = (encounter: EncounterForDietician) => {
+    const productUUID = "YOUR_NUTRITION_PRODUCT_UUID_HERE";
+    if (productUUID === "YOUR_NUTRITION_PRODUCT_UUID_HERE") {
+      alert("Developer Action: Set a valid product UUID in DieticianDashboard.tsx");
+      return;
+    }
+
     createOrderMutation.mutate({
       encounter: encounter.id,
       patient: encounter.patient.id,
-      facility: facilityId!,
+      facility: facilityId,
       location: encounter.current_location.id,
       service_type: "food",
-      products: [ "your-nutrition-product-uuid-here" ],
+      products: [productUUID],
       datetime: new Date().toISOString(),
       status: "active",
-      schedule: { start_time: "08:00", frequency: "daily" },
-      note: `Meal order for patient ${encounter.patient.name}`,
+      schedule: { start_time: "09:00", frequency: "daily" },
+      note: "Initial meal order.",
     });
   };
 
-  if (isLoading) {
-    return <div className="p-6">{t("loading")}</div>;
-  }
+  if (isLoading) return <div className="p-4">Loading encounters...</div>;
 
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-3xl font-bold">Dietician Dashboard</h1>
+    <div className="p-4 space-y-4">
       <Card>
-        <CardHeader>
-          <CardTitle>Patients Requiring Nutrition Plan</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle>Patients Requiring Nutrition Plan</CardTitle></CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">

@@ -6,7 +6,7 @@ import { Card, CardContent } from "../ui/card";
 import { dietApi } from "../../api/dietApi";
 import type { NutritionOrder } from "../../types/nutrition_order";
 import { useQuery } from "@tanstack/react-query";
-import { I18NNAMESPACE } from "@/types/namespace";
+import { I18NNAMESPACE } from "../../types/namespace";
 
 interface PluginEncounterTabProps {
   encounter: Encounter;
@@ -81,7 +81,6 @@ const NutritionOrdersTab: React.FC<PluginEncounterTabProps> = ({ encounter, pati
                     <td className="px-6 py-4 whitespace-nowrap">
                       {order.status}
                     </td>
-                    {/* FIXED: Added missing table cell for schedule */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       {order.schedule?.frequency || t("no_data_placeholder")}
                     </td>
