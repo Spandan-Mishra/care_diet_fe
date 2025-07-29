@@ -13,7 +13,7 @@ interface PluginEncounterTabProps {
   patient: PatientRead;
 }
 
-const NutritionOrdersTab: React.FC<PluginEncounterTabProps> = ({ encounter, patient }) => {
+const NutritionOrdersTab: React.FC<PluginEncounterTabProps> = ({ encounter }) => {
   const { t } = useTranslation(I18NNAMESPACE);
 
   const { data, isLoading } = useQuery({
@@ -35,15 +35,11 @@ const NutritionOrdersTab: React.FC<PluginEncounterTabProps> = ({ encounter, pati
 
   if (!data?.results?.length) {
     return (
-      <div className="space-y-6">
-        <Card className="overflow-hidden">
-          <CardContent className="p-0">
-            <div className="p-6 text-center text-gray-500">
-              {t("no_nutrition_orders_found")}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <Card className="mt-4">
+        <CardContent className="p-6 text-center text-gray-500">
+          {t("no_nutrition_orders_found")}
+        </CardContent>
+      </Card>
     );
   }
 

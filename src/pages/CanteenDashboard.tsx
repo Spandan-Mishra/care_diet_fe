@@ -3,16 +3,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { dietApi } from "../api/dietApi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-interface CanteenDashboardProps {
-  facilityId: string;
-}
 
-interface OrderForCanteen {
-  id: string;
-  patient: { name: string };
-  products: { name: string }[];
-  status: string;
-}
+interface CanteenDashboardProps { facilityId: string; }
+interface OrderForCanteen { id: string; patient: { name: string }; products: { name: string }[]; status: string; }
 
 const CanteenDashboard: React.FC<CanteenDashboardProps> = ({ facilityId }) => {
   const queryClient = useQueryClient();
@@ -31,7 +24,7 @@ const CanteenDashboard: React.FC<CanteenDashboardProps> = ({ facilityId }) => {
   const updateStatusMutation = useMutation({
     mutationFn: ({ orderId, status }: { orderId: string; status: string }) =>
       fetch(dietApi.updateCanteenOrder.path(orderId), {
-        method: "PATCH",
+        method: "PUT",
         headers: { "Content-Type": "application/json"},
         body: JSON.stringify({ status }),
       }).then((res) => {
@@ -63,8 +56,8 @@ const CanteenDashboard: React.FC<CanteenDashboardProps> = ({ facilityId }) => {
             <tbody>
               {data?.results?.map((order) => (
                 <tr key={order.id} className="border-b">
-                  <td className="p-2">{order.patient.name}</td>
-                  <td className="p-2">{order.products.map(p => p.name).join(", ")}</td>
+                  <td>{order.patient.name}</td>
+                  <td>{order.products.map(p => p.name).join(", ")}</td>
                   <td className="p-2">
                     <select
                       defaultValue={order.status}

@@ -6,6 +6,8 @@ import { dietApi, type NutritionOrderCreate } from "../api/dietApi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
+const CANTEEN_LOCATION_ID = "13aa9d8a-838e-4435-9ed2-1af3b3945fb5";
+
 interface DieticianDashboardProps {
   facilityId: string;
 }
@@ -48,8 +50,8 @@ const DieticianDashboard: React.FC<DieticianDashboardProps> = ({ facilityId }) =
   });
 
   const handleCreateOrder = (encounter: EncounterForDietician) => {
-    const productUUID = "YOUR_NUTRITION_PRODUCT_UUID_HERE";
-    if (productUUID === "YOUR_NUTRITION_PRODUCT_UUID_HERE") {
+    const productUUID = "c2e0f97f-9c68-4f57-9975-9befee199135";
+    if (productUUID === "c2e0f97f-9c68-4f57-9975-9befee199135") {
       alert("Developer Action: Set a valid product UUID in DieticianDashboard.tsx");
       return;
     }
@@ -58,7 +60,7 @@ const DieticianDashboard: React.FC<DieticianDashboardProps> = ({ facilityId }) =
       encounter: encounter.id,
       patient: encounter.patient.id,
       facility: facilityId,
-      location: encounter.current_location.id,
+      location: CANTEEN_LOCATION_ID,
       service_type: "food",
       products: [productUUID],
       datetime: new Date().toISOString(),

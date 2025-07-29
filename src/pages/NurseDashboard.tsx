@@ -1,8 +1,9 @@
 import React from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation} from "@tanstack/react-query";
 import { dietApi, type NutritionIntakeCreate } from "../api/dietApi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+
 
 interface NurseDashboardProps {
   facilityId: string;
@@ -13,7 +14,6 @@ interface OrderForNurse {
   patient: { id: string; name: string };
   encounter: { id: string };
   facility: { id: string };
-  location: { id: string };
   products: { name: string; product_id: string; quantity: string }[];
   status: string;
 }
@@ -50,7 +50,6 @@ const NurseDashboard: React.FC<NurseDashboardProps> = ({ facilityId }) => {
       patient: order.patient.id,
       encounter: order.encounter.id,
       facility: order.facility.id,
-      location: order.location.id,
       status: "completed",
       intake_items: order.products,
       occurrence_datetime: new Date().toISOString(),

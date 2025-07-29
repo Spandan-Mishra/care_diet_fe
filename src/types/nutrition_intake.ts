@@ -4,7 +4,6 @@ export type NutritionIntake = {
   encounter: any;
   logged_by: any;
   facility: any;
-  location: any;
   service_type: string;
   status: string;
   status_reason: string | null;
