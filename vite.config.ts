@@ -11,7 +11,7 @@ export default defineConfig({
       exposes: {
         "./manifest": "./src/manifest.ts",
       },
-      shared: ["react", "react-dom", "react-i18next"],
+      shared: ["react", "react-dom", "react-i18next", "@tanstack/react-query", "raviger"],
     }),
     react(),
   ],
