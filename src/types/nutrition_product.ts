@@ -1,4 +1,3 @@
-// This defines the possible values for the 'status' field.
 export type NutritionProductStatus = "active" | "inactive" | "entered-in-error";
 export type NutritionProductServiceType = "food";
 export type NutritionProduct = {

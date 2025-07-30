@@ -19,34 +19,22 @@ interface OrderForNurse {
 }
 
 const NurseDashboard: React.FC<NurseDashboardProps> = ({ facilityId }) => {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ["nurse_view_orders", facilityId],
-    queryFn: async () => {
-      const params = new URLSearchParams({ facility: facilityId });
-      const res = await fetch(`${dietApi.listCanteenOrders.path}?${params}`);
-      if (!res.ok) throw new Error("Failed to fetch orders");
-      return res.json() as Promise<{ results: OrderForNurse[] }>;
-    },
+    queryFn: () => dietApi.listCanteenOrders({ facility: facilityId }),
     enabled: !!facilityId,
+    select: (data) => data.results,
   });
 
   const logIntakeMutation = useMutation({
-    mutationFn: (newIntake: NutritionIntakeCreate) =>
-      fetch(dietApi.createIntakeLog.path, {
-        method: "POST",
-        headers: { "Content-Type": "application/json"},
-        body: JSON.stringify(newIntake),
-      }).then((res) => {
-        if (!res.ok) throw new Error("Failed to log intake");
-        return res.json();
-      }),
+    mutationFn: dietApi.createIntakeLog,
     onSuccess: () => {
       alert("Intake logged successfully!");
     },
   });
 
   const handleLogIntake = (order: OrderForNurse) => {
-    logIntakeMutation.mutate({
+    const newIntake: NutritionIntakeCreate = {
       patient: order.patient.id,
       encounter: order.encounter.id,
       facility: order.facility.id,
@@ -55,8 +43,9 @@ const NurseDashboard: React.FC<NurseDashboardProps> = ({ facilityId }) => {
       occurrence_datetime: new Date().toISOString(),
       service_type: "food",
       status_reason: "",
-      note: `Intake for order ${order.id}`,
-    });
+      note: `Intake logged for order ${order.id}`,
+    };
+    logIntakeMutation.mutate(newIntake);
   };
 
   if (isLoading) return <div className="p-4">Loading...</div>;
@@ -78,7 +67,7 @@ const NurseDashboard: React.FC<NurseDashboardProps> = ({ facilityId }) => {
               </tr>
             </thead>
             <tbody>
-              {data?.results?.map((order) => (
+              {data?.map((order) => (
                 <tr key={order.id} className="border-b">
                   <td className="p-2">{order.patient.name}</td>
                   <td className="p-2">{order.products.map(p => p.name).join(", ")}</td>
@@ -88,7 +77,7 @@ const NurseDashboard: React.FC<NurseDashboardProps> = ({ facilityId }) => {
                   </td>
                 </tr>
               ))}
-              {data?.results?.length === 0 && (
+              {data?.length === 0 && (
                 <tr><td colSpan={4} className="p-4 text-center text-gray-500">No orders to log.</td></tr>
               )}
             </tbody>

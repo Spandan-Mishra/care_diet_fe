@@ -5,27 +5,22 @@ import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "../ui/card";
 import { dietApi } from "../../api/dietApi";
 import type { NutritionOrder } from "../../types/nutrition_order";
-import { useQuery } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { I18NNAMESPACE } from "../../types/namespace";
+
+const nutritionTabQueryClient = new QueryClient();
 
 interface PluginEncounterTabProps {
   encounter: Encounter;
   patient: PatientRead;
 }
 
-const NutritionOrdersTab: React.FC<PluginEncounterTabProps> = ({ encounter }) => {
+const NutritionOrdersTabInner: React.FC<PluginEncounterTabProps> = ({ encounter }) => {
   const { t } = useTranslation(I18NNAMESPACE);
 
   const { data, isLoading } = useQuery({
     queryKey: ["nutrition_orders", encounter.id],
-    queryFn: async () => {
-      const params = new URLSearchParams({ encounter: encounter.id });
-      const res = await fetch(
-        `${dietApi.listEncounterNutritionOrders.path}?${params.toString()}`
-      );
-      if (!res.ok) throw new Error("Failed to fetch nutrition orders");
-      return res.json() as Promise<{ results: NutritionOrder[] }>;
-    },
+    queryFn: () => dietApi.listEncounterNutritionOrders({ encounter: encounter.id }),
     enabled: !!encounter.id,
   });
 
@@ -94,6 +89,14 @@ const NutritionOrdersTab: React.FC<PluginEncounterTabProps> = ({ encounter }) =>
         </CardContent>
       </Card>
     </div>
+  );
+};
+
+const NutritionOrdersTab: React.FC<PluginEncounterTabProps> = (props) => {
+  return (
+    <QueryClientProvider client={nutritionTabQueryClient}>
+      <NutritionOrdersTabInner {...props} />
+    </QueryClientProvider>
   );
 };
 
