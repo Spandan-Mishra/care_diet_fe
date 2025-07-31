@@ -11,7 +11,7 @@ export default defineConfig({
       exposes: {
         "./manifest": "./src/manifest.ts",
       },
-      shared: ["react", "react-dom", "react-i18next"],
+      shared: ["react", "react-dom", "react-i18next", "@tanstack/react-query", "raviger"],
     }),
     react(),
   ],
@@ -41,11 +41,13 @@ export default defineConfig({
     port: 5173,
     allowedHosts: true,
     host: "0.0.0.0",
-    cors: {
-      origin: true,
-      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-      allowedHeaders: ["Content-Type", "Authorization"],
-      credentials: true,
-    }
+    cors: true,
+    // FOR LOCAL DEVELOPMENT
+    // cors: {
+    //   origin: true,
+    //   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    //   allowedHeaders: ["Content-Type", "Authorization"],
+    //   credentials: true,
+    // }
   },
 });

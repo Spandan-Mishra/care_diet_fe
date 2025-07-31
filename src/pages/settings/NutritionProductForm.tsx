@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/form";
 import { dietApi, type NutritionProductCreate } from "../../api/dietApi";
 
-const NEW_PRODUCT_ROUTE = "/facility/:facilityId/settings/nutrition-products/new";
+const NEW_PRODUCT_ROUTE = "/facility/:facilityId/settings/nutrition_products/new";
 
 // This schema defines the form fields the user interacts with.
 const formSchema = z.object({
@@ -56,13 +56,13 @@ const NutritionProductForm: React.FC = () => {
   };
 
   const canteenLocationId = "YOUR_CANTEEN_LOCATION_UUID_HERE";
-  if (canteenLocationId === "YOUR_CANTEEN_LOCATION_UUID_HERE") {
-    return (
-      <div className="p-4 text-red-500 font-bold text-lg">
-        Developer Action Required: Please open `NutritionProductForm.tsx` and replace the placeholder `canteenLocationId`.
-      </div>
-    );
-  }
+  // if (canteenLocationId === "YOUR_CANTEEN_LOCATION_UUID_HERE") {
+  //   return (
+  //     <div className="p-4 text-red-500 font-bold text-lg">
+  //       Developer Action Required: Please open `NutritionProductForm.tsx` and replace the placeholder `canteenLocationId`.
+  //     </div>
+  //   );
+  // }
   useEffect(() => form.setValue("location", canteenLocationId), [canteenLocationId, form]);
 
   if (!facilityId) {
@@ -80,7 +80,7 @@ const NutritionProductForm: React.FC = () => {
               </CardContent>
             </Card>
             <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => navigate(`/facility/${facilityId}/settings/nutrition-products`)}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => navigate(`/facility/${facilityId}/settings/nutrition_products`)}>Cancel</Button>
               <Button type="submit" disabled={isPending}>{isPending ? "Creating..." : "Create Product"}</Button>
             </div>
           </form>
