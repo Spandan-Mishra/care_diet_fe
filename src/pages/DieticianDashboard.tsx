@@ -6,7 +6,8 @@ import { dietApi, type NutritionOrderCreate } from "../api/dietApi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-const CANTEEN_LOCATION_ID = "13aa9d8a-838e-4435-9ed2-1af3b3945fb5";
+
+const CANTEEN_LOCATION_ID = "b4a82529-0608-4f03-9b49-99a0c9e692ab";
 
 interface DieticianDashboardProps {
   facilityId: string;
@@ -14,8 +15,9 @@ interface DieticianDashboardProps {
 
 interface EncounterForDietician {
   id: string;
-  patient: { id: string; name: string };
-  current_location: { id: string };
+  patient_name: string;
+  patient_id: string;
+  current_location_id: string;
   status: string;
 }
 
@@ -24,50 +26,40 @@ const DieticianDashboard: React.FC<DieticianDashboardProps> = ({ facilityId }) =
 
   const { data, isLoading } = useQuery({
     queryKey: ["dietician_pending_orders", facilityId],
-    queryFn: async () => {
-      const params = new URLSearchParams({ facility: facilityId });
-      const res = await fetch(`${dietApi.listDieticianOrders.path}?${params}`);
-      if (!res.ok) throw new Error("Failed to fetch encounters");
-      return res.json() as Promise<{ results: EncounterForDietician[] }>;
-    },
+    queryFn: () => dietApi.listDieticianOrders({ facility: facilityId }),
     enabled: !!facilityId,
+    select: (data) => (data.results as unknown) as EncounterForDietician[],
   });
 
   const createOrderMutation = useMutation({
-    mutationFn: (newOrder: NutritionOrderCreate) =>
-      fetch(dietApi.createMealOrder.path, {
-        method: "POST",
-        headers: { "Content-Type": "application/json"},
-        body: JSON.stringify(newOrder),
-      }).then((res) => {
-        if (!res.ok) throw new Error("Failed to create order");
-        return res.json();
-      }),
+    mutationFn: dietApi.createMealOrder,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["dietician_pending_orders", facilityId] });
-      alert("Order created successfully!");
+      alert("Nutrition order created successfully!");
     },
   });
 
   const handleCreateOrder = (encounter: EncounterForDietician) => {
-    const productUUID = "c2e0f97f-9c68-4f57-9975-9befee199135";
-    if (productUUID === "c2e0f97f-9c68-4f57-9975-9befee199135") {
+    const productUUID = "4c199a82-a6d3-4718-aedf-7627ecd36683";
+    if (productUUID === "4c199a82-a6d3-4718-aedf-7627ecd36683") {
       alert("Developer Action: Set a valid product UUID in DieticianDashboard.tsx");
       return;
     }
 
-    createOrderMutation.mutate({
+    const newOrder: NutritionOrderCreate = {
       encounter: encounter.id,
-      patient: encounter.patient.id,
+      patient: encounter.patient_id,
       facility: facilityId,
       location: CANTEEN_LOCATION_ID,
       service_type: "food",
       products: [productUUID],
       datetime: new Date().toISOString(),
       status: "active",
-      schedule: { start_time: "09:00", frequency: "daily" },
+      schedule: { time: "09:00", frequency: "daily" },
       note: "Initial meal order.",
-    });
+    };
+
+    createOrderMutation.mutate(newOrder);
   };
 
   if (isLoading) return <div className="p-4">Loading encounters...</div>;
@@ -87,16 +79,16 @@ const DieticianDashboard: React.FC<DieticianDashboardProps> = ({ facilityId }) =
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {data?.results?.length === 0 && (
+                {data?.length === 0 && (
                   <tr>
                     <td colSpan={3} className="px-6 py-4 text-center text-gray-500">
                       No patients are currently waiting for a nutrition order.
                     </td>
                   </tr>
                 )}
-                {data?.results?.map((encounter) => (
+                {data?.map((encounter) => (
                   <tr key={encounter.id}>
-                    <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{encounter.patient?.name || "N/A"}</td>
+                    <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{encounter.patient_name || "N/A"}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-gray-500">{encounter.status}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <Button

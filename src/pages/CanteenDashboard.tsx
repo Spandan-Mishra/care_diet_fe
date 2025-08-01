@@ -12,25 +12,13 @@ const CanteenDashboard: React.FC<CanteenDashboardProps> = ({ facilityId }) => {
 
   const { data, isLoading } = useQuery({
     queryKey: ["canteen_orders", facilityId],
-    queryFn: async () => {
-      const params = new URLSearchParams({ facility: facilityId });
-      const res = await fetch(`${dietApi.listCanteenOrders.path}?${params}`);
-      if (!res.ok) throw new Error("Failed to fetch canteen orders");
-      return res.json() as Promise<{ results: OrderForCanteen[] }>;
-    },
+    queryFn: () => dietApi.listCanteenOrders({ facility: facilityId }),
     enabled: !!facilityId,
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({ orderId, status }: { orderId: string; status: string }) =>
-      fetch(dietApi.updateCanteenOrder.path(orderId), {
-        method: "PUT",
-        headers: { "Content-Type": "application/json"},
-        body: JSON.stringify({ status }),
-      }).then((res) => {
-        if (!res.ok) throw new Error("Failed to update status");
-        return res.json();
-      }),
+    mutationFn: (variables: { orderId: string; status: string }) =>
+      dietApi.updateCanteenOrder(variables.orderId, { status: variables.status }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["canteen_orders", facilityId] });
     },

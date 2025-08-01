@@ -1,12 +1,9 @@
 import { lazy } from "react";
+import routes from "./routes";
 
 const manifest = {
   plugin: "care_diet_fe",
-  routes: {
-    "/facility/:facilityId/services/:serviceId": lazy(
-      () => import("./pages/ServiceDispatcherPage")
-    ),
-  },
+  routes,
   encounterTabs: {
     nutrition_orders: lazy(() => import("./components/encounter-tabs/NutritionOrdersTab")),
   },
