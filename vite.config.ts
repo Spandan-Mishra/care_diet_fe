@@ -11,7 +11,11 @@ export default defineConfig({
       exposes: {
         "./manifest": "./src/manifest.ts",
       },
-      shared: ["react", "react-dom", "react-i18next", "@tanstack/react-query", "raviger"],
+      shared: ["react", "react-dom", "react-i18next", "@tanstack/react-query", "raviger",
+        "zod",
+        "@hookform/resolvers/zod",
+        "react-hook-form",
+      ],
     }),
     react(),
   ],

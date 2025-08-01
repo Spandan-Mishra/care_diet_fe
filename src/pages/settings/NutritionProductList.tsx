@@ -39,7 +39,7 @@ const NutritionProductList: React.FC = () => {
           <Button
             onClick={() =>
               navigate(
-                `/facility/${facilityId}/settings/nutrition-products/new`
+                `/facility/${facilityId}/settings/nutrition_products/new`
               )
             }
           >
@@ -68,7 +68,7 @@ const NutritionProductList: React.FC = () => {
                       className="cursor-pointer hover:bg-gray-50"
                       onClick={() =>
                         navigate(
-                          `/facility/${facilityId}/settings/nutrition-products/${product.id}/edit`
+                          `/facility/${facilityId}/settings/nutrition_products/${product.id}/edit`
                         )
                       }
                     >
