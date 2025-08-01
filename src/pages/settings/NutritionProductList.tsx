@@ -37,6 +37,7 @@ const NutritionProductList: React.FC = () => {
             </p>
           </div>
           <Button
+            className="text-white"
             onClick={() =>
               navigate(
                 `/facility/${facilityId}/settings/nutrition_products/new`
@@ -46,42 +47,48 @@ const NutritionProductList: React.FC = () => {
             Add New Product
           </Button>
         </div>
-        
+
         {isLoading ? (
-          <div className="p-4">Loading Products...</div>
+          <div>Loading...</div>
         ) : (
           <Card>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Code</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Calories (kcal)</TableHead>
+                    <TableHead className="text-center">Name</TableHead>
+                    <TableHead className="text-center">Code</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
+                    <TableHead className="text-center">Calories (kcal)</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {products.map((product: NutritionProduct) => (
-                    <TableRow
-                      key={product.id}
-                      className="cursor-pointer hover:bg-gray-50"
-                      onClick={() =>
-                        navigate(
-                          `/facility/${facilityId}/settings/nutrition_products/${product.id}/edit`
-                        )
-                      }
-                    >
-                      <TableCell>{product.name}</TableCell>
+                    <TableRow key={product.id}>
+                      <TableCell className="font-medium">{product.name}</TableCell>
                       <TableCell>{product.code}</TableCell>
-                      <TableCell>{product.status}</TableCell>
+                      <TableCell className="capitalize">{product.status}</TableCell>
                       <TableCell>{product.calories}</TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            navigate(
+                              `/facility/${facilityId}/settings/nutrition_products/${product.id}`
+                            )
+                          }
+                        >
+                          View Details
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
-                   {products.length === 0 && (
+                  {products.length === 0 && (
                     <TableRow>
                       <TableCell
-                        colSpan={4}
+                        colSpan={5}
                         className="text-center text-gray-500 p-4"
                       >
                         No nutrition products found.

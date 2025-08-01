@@ -27,33 +27,33 @@ export const dietApi = {
     );
   },
   createNutritionProduct: async (body: NutritionProductCreate) => {
-    return await request<NutritionProduct>("/api/care-diet/products/", {
+    return await request<NutritionProduct>("/api/care_diet/products/", {
       method: "POST",
       body: JSON.stringify(body),
     });
   },
   retrieveNutritionProduct: async (productId: string) => {
-    return await request<NutritionProduct>(`/api/care-diet/products/${productId}/`);
+    return await request<NutritionProduct>(`/api/care_diet/products/${productId}/`);
   },
   updateNutritionProduct: async (productId: string, body: Partial<NutritionProductCreate>) => {
-    return await request<NutritionProduct>(`/api/care-diet/products/${productId}/`, {
+    return await request<NutritionProduct>(`/api/care_diet/products/${productId}/`, {
       method: "PATCH",
       body: JSON.stringify(body),
     });
   },
   listEncounterNutritionOrders: async (query: { encounter: string }) => {
     return await request<PaginatedResponse<NutritionOrder>>(
-      `/api/care-diet/encounter-nutrition-orders/${queryString(query)}`
+      `/api/care_diet/encounter-nutrition-orders/${queryString(query)}`
     );
   },
 
   listDieticianOrders: async (query: { facility: string }) => {
     return await request<PaginatedResponse<Encounter>>(
-      `/api/care-diet/dietician-orders/${queryString(query)}`
+      `/api/care_diet/dietician-orders/${queryString(query)}`
     );
   },
   createMealOrder: async (body: NutritionOrderCreate) => {
-    return await request<NutritionOrder>("/api/care-diet/dietician-meals/", {
+    return await request<NutritionOrder>("/api/care_diet/dietician-meals/", {
       method: "POST",
       body: JSON.stringify(body),
     });
@@ -61,18 +61,18 @@ export const dietApi = {
 
   listCanteenOrders: async (query: { facility: string }) => {
     return await request<PaginatedResponse<NutritionOrder>>(
-      `/api/care-diet/canteen-orders/${queryString(query)}`
+      `/api/care_diet/canteen-orders/${queryString(query)}`
     );
   },
   updateCanteenOrder: async (orderId: string, body: CanteenOrderUpdate) => {
-    return await request<NutritionOrder>(`/api/care-diet/canteen-orders/${orderId}/`, {
+    return await request<NutritionOrder>(`/api/care_diet/canteen-orders/${orderId}/`, {
       method: "PATCH",
       body: JSON.stringify(body),
     });
   },
 
   createIntakeLog: async (body: NutritionIntakeCreate) => {
-    return await request<NutritionIntake>("/api/care-diet/intake-logs/", {
+    return await request<NutritionIntake>("/api/care_diet/intake-logs/", {
       method: "POST",
       body: JSON.stringify(body),
     });
