@@ -14,7 +14,7 @@ const routes = {
   ),
   "/facility/:facilityId/settings/nutrition_products/:productId/edit": () => (
       <NutritionProductForm />
-    )
+  ),
 };
 
 export default routes;
