@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,15 +25,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-// This is a simple form component, so it only needs these props.
 interface NutritionOrderQuestionProps {
   facilityId: string;
   patientId: string;
   encounterId: string;
-  onSuccess: () => void; // The callback to close the form
+  onSuccess: () => void;
 }
 
-// Zod schema for validating the order details form.
 const formSchema = z.object({
   status: z.enum(["active", "on-hold"]),
   datetime: z.string().min(1, "Date and time are required"),
@@ -71,8 +69,8 @@ const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
     onSuccess: () => {
       alert("Nutrition Order created successfully!");
       queryClient.invalidateQueries({ queryKey: ["nutrition_orders", encounterId] });
-      setSelectedProduct(null); // Reset the form selection
-      onSuccess(); // Call the callback to close the form in the parent tab
+      setSelectedProduct(null);
+      onSuccess();
     },
     onError: (error: Error) => alert(error.message),
   });
@@ -87,7 +85,7 @@ const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
       patient: patientId,
       encounter: encounterId,
       facility: facilityId,
-      location: selectedProduct.location, // The Canteen's location from the product
+      location: selectedProduct.location,
       products: [selectedProduct.id],
       datetime: new Date(data.datetime).toISOString(),
       status: data.status,
@@ -105,7 +103,6 @@ const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
     <div className="space-y-4">
       <h3 className="text-lg font-semibold">Select a Nutrition Product</h3>
 
-      {/* STEP 1: Product Selection UI */}
       {!selectedProduct && (
         <div className="space-y-2">
           <Input
@@ -131,7 +128,6 @@ const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
         </div>
       )}
 
-      {/* STEP 2: Order Detail Form UI (appears after a product is selected) */}
       {selectedProduct && (
         <Card className="mt-4 border-primary">
           <CardContent className="p-4">
@@ -150,8 +146,6 @@ const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* --- THIS IS THE DEFINITIVE FIX --- */}
-                  {/* The 'control={form.control}' prop is now correctly added to all FormFields */}
                   <FormField control={form.control} name="status" render={({ field }) => (
                     <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} value={field.value}>
                       <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
@@ -170,7 +164,6 @@ const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
                   <FormField control={form.control} name="note" render={({ field }) => (
                     <FormItem className="md:col-span-2"><FormLabel>Notes</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage/></FormItem>
                   )}/>
-                  {/* ------------------------------------ */}
                 </div>
                 <div className="flex justify-end gap-2 mt-4">
                     <Button type="submit" disabled={isPending}>

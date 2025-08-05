@@ -19,7 +19,7 @@ interface PluginEncounterTabProps {
 
 const NutritionOrdersTabInner: React.FC<PluginEncounterTabProps> = ({ encounter, patient }) => {
   const { t } = useTranslation(I18NNAMESPACE);
-  const [isCreating, setIsCreating] = useState(false); // State to toggle the form view
+  const [isCreating, setIsCreating] = useState(false);
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["nutrition_orders", encounter.id],
@@ -33,23 +33,20 @@ const NutritionOrdersTabInner: React.FC<PluginEncounterTabProps> = ({ encounter,
 
   return (
     <div className="diet-container p-4">
-      {/* --- THIS IS THE KEY CHANGE --- */}
       {isCreating ? (
-        // When 'isCreating' is true, show the form.
         <div>
           <h3 className="text-lg font-semibold mb-2">Add New Nutrition Order</h3>
           <NutritionOrderQuestion
             facilityId={"2c50ae47-bea8-48e1-be5d-27daf87a1a89"}
             patientId={patient.id}
             encounterId={encounter.id}
-            onSuccess={() => setIsCreating(false)} // Callback to close the form
+            onSuccess={() => setIsCreating(false)}
           />
           <Button variant="outline" onClick={() => setIsCreating(false)} className="mt-4">
             Cancel
           </Button>
         </div>
       ) : (
-        // When 'isCreating' is false, show the list and the "Add New" button.
         <div>
           <div className="flex justify-end mb-4">
             <Button onClick={() => setIsCreating(true)}>
@@ -98,12 +95,10 @@ const NutritionOrdersTabInner: React.FC<PluginEncounterTabProps> = ({ encounter,
           )}
         </div>
       )}
-      {/* ----------------------------- */}
     </div>
   );
 };
 
-// The wrapper with the QueryClientProvider is still correct and necessary.
 const NutritionOrdersTab: React.FC<PluginEncounterTabProps> = (props) => {
   return (
     <QueryClientProvider client={nutritionTabQueryClient}>
