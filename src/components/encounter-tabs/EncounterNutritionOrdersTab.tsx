@@ -1,14 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import type { Encounter } from "../../types/encounter";
 import type { PatientRead } from "../../types/patient";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "../ui/card";
 import { dietApi } from "../../api/dietApi";
+import type { NutritionOrder } from "../../types/nutrition_order";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { I18NNAMESPACE } from "../../types/namespace";
-import { Button } from "../ui/button";
-import { navigate } from "raviger";
-import { PlusIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import NutritionOrderQuestion  from "../../pages/questionnaire/NutritionOrderQuestion";
 
 const nutritionTabQueryClient = new QueryClient();
 
@@ -17,83 +17,99 @@ interface PluginEncounterTabProps {
   patient: PatientRead;
 }
 
-const EncounterNutritionOrdersTabInner: React.FC<PluginEncounterTabProps> = ({ encounter, patient }) => {
+const NutritionOrdersTabInner: React.FC<PluginEncounterTabProps> = ({ encounter, patient }) => {
   const { t } = useTranslation(I18NNAMESPACE);
-  const facilityId = "2c50ae47-bea8-48e1-be5d-27daf87a1a89";
+  const [isCreating, setIsCreating] = useState(false); // State to toggle the form view
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ["nutrition_orders", encounter.id],
-    queryFn: () =>
-      dietApi.listEncounterNutritionOrders({
-        encounter: encounter.id!,
-      }),
-    enabled: !!encounter.id,
+    queryFn: () => dietApi.listEncounterNutritionOrders({ encounter: encounter.id }),
   });
+
+  if (isLoading) return <div className="p-4">Loading...</div>;
+  if (isError) return <div className="p-4 text-red-600">Error: {error.message}</div>;
 
   const orders = data?.results || [];
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-4 justify-end">
-
-        <Button 
-          className="text-white" 
-          onClick={() => 
-            navigate(`/facility/${facilityId}/patient/${patient.id}/encounter/${encounter.id}/questionnaire/nutrition_order`
-            )
-          }
-          >
-            <PlusIcon className="size-5 mr-1" />
-            Add Nutrition Order
-        </Button>
-      </div>
-
-      {isLoading ? (
-        <div>Loading...</div>
+    <div className="diet-container p-4">
+      {/* --- THIS IS THE KEY CHANGE --- */}
+      {isCreating ? (
+        // When 'isCreating' is true, show the form.
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Add New Nutrition Order</h3>
+          <NutritionOrderQuestion
+            facilityId={"2c50ae47-bea8-48e1-be5d-27daf87a1a89"}
+            patientId={patient.id}
+            encounterId={encounter.id}
+            onSuccess={() => setIsCreating(false)} // Callback to close the form
+          />
+          <Button variant="outline" onClick={() => setIsCreating(false)} className="mt-4">
+            Cancel
+          </Button>
+        </div>
       ) : (
-        <Card className="overflow-hidden">
-          <CardContent className="p-0">
-            {orders.length > 0 ? (
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Products</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Schedule</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date/Time</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notes</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {orders.map((order) => (
-                    <tr key={order.id}>
-                      <td className="px-6 py-4">{order.products.map((p) => p.name).join(", ")}</td>
-                      <td className="px-6 py-4 capitalize">{order.status}</td>
-                      <td className="px-6 py-4">{order.schedule?.frequency || "-"}</td>
-                      <td className="px-6 py-4">{order.datetime}</td>
-                      <td className="px-6 py-4">{order.note || "-"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <div className="p-6 text-center text-gray-500">
+        // When 'isCreating' is false, show the list and the "Add New" button.
+        <div>
+          <div className="flex justify-end mb-4">
+            <Button onClick={() => setIsCreating(true)}>
+              Add New Nutrition Order
+            </Button>
+          </div>
+          {orders.length === 0 ? (
+            <Card>
+              <CardContent className="p-6 text-center text-gray-500">
                 {t("no_nutrition_orders_found")}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="p-0">
+              {orders.length > 0 ? (
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Products</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Schedule</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date/Time</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {orders.map((order) => (
+                      <tr key={order.id}>
+                        <td className="px-6 py-4">{order.products.map((p) => p.name).join(", ")}</td>
+                        <td className="px-6 py-4 capitalize">{order.status}</td>
+                        <td className="px-6 py-4">{order.schedule?.frequency || "-"}</td>
+                        <td className="px-6 py-4">{order.datetime}</td>
+                        <td className="px-6 py-4">{order.note || "-"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="p-6 text-center text-gray-500">
+                  {t("no_nutrition_orders_found")}
+                </div>
+              )}
+              </CardContent>
+            </Card>
+          )}
+        </div>
       )}
+      {/* ----------------------------- */}
     </div>
   );
 };
 
-const EncounterNutritionOrdersTab: React.FC<PluginEncounterTabProps> = (props) => {
+// The wrapper with the QueryClientProvider is still correct and necessary.
+const NutritionOrdersTab: React.FC<PluginEncounterTabProps> = (props) => {
   return (
     <QueryClientProvider client={nutritionTabQueryClient}>
-      <EncounterNutritionOrdersTabInner {...props}/>
+      <NutritionOrdersTabInner {...props} />
     </QueryClientProvider>
   );
 };
 
-export default EncounterNutritionOrdersTab;
+export default NutritionOrdersTab;

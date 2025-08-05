@@ -1,26 +1,39 @@
 import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { navigate, usePathParams } from "raviger";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { dietApi, type NutritionOrderCreate } from "../../api/dietApi";
 import { type NutritionProduct } from "../../types/nutrition_product";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-// This interface defines the props our component will receive from QuestionInput.tsx
+// This is a simple form component, so it only needs these props.
 interface NutritionOrderQuestionProps {
   facilityId: string;
   patientId: string;
   encounterId: string;
+  onSuccess: () => void; // The callback to close the form
 }
 
-// This schema defines the fields for the form that appears *after* a product is selected.
+// Zod schema for validating the order details form.
 const formSchema = z.object({
   status: z.enum(["active", "on-hold"]),
   datetime: z.string().min(1, "Date and time are required"),
@@ -31,28 +44,22 @@ const formSchema = z.object({
 
 type OrderFormData = z.infer<typeof formSchema>;
 
-export const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
+const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
   facilityId,
   patientId,
   encounterId,
+  onSuccess,
 }) => {
   const queryClient = useQueryClient();
   const [productSearch, setProductSearch] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<NutritionProduct | null>(null);
 
-  // Fetch a list of nutrition products for the search/autocomplete field.
   const { data: productsData, isLoading: isLoadingProducts } = useQuery({
-    queryKey: ["nutrition_products", facilityId, productSearch],
-    queryFn: () => dietApi.listNutritionProducts({ facility: facilityId, search: productSearch }),
+    queryKey: ["nutrition_products_search", facilityId, productSearch],
+    queryFn: () =>
+      dietApi.listNutritionProducts({ facility: facilityId, search: productSearch }),
+    select: (data) => data.results,
   });
-
-  const productOptions = useMemo(
-    () => productsData?.results.map((product) => ({
-      label: `${product.name} (${product.calories} kcal)`,
-      value: product.id,
-    })) || [],
-    [productsData?.results]
-  );
 
   const form = useForm<OrderFormData>({
     resolver: zodResolver(formSchema),
@@ -64,17 +71,11 @@ export const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
     onSuccess: () => {
       alert("Nutrition Order created successfully!");
       queryClient.invalidateQueries({ queryKey: ["nutrition_orders", encounterId] });
-      navigate(`/facility/${facilityId}/patient/${patientId}/encounter/${encounterId}`);
+      setSelectedProduct(null); // Reset the form selection
+      onSuccess(); // Call the callback to close the form in the parent tab
     },
     onError: (error: Error) => alert(error.message),
   });
-
-  const handleProductSelect = (productId: string) => {
-    const product = productsData?.results.find((p) => p.id === productId);
-    if (product) {
-      setSelectedProduct(product);
-    }
-  };
 
   const onSubmit = (data: OrderFormData) => {
     if (!selectedProduct) {
@@ -86,7 +87,7 @@ export const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
       patient: patientId,
       encounter: encounterId,
       facility: facilityId,
-      location: selectedProduct.location, // The Canteen Location from the product
+      location: selectedProduct.location, // The Canteen's location from the product
       products: [selectedProduct.id],
       datetime: new Date(data.datetime).toISOString(),
       status: data.status,
@@ -94,7 +95,7 @@ export const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
         time: data.schedule_time,
         frequency: data.schedule_frequency,
       },
-      note: data.note || "",
+      note: data.note || null,
       service_type: "food",
     };
     createOrder(payload);
@@ -102,38 +103,79 @@ export const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Select a Nutrition Product</h2>
+      <h3 className="text-lg font-semibold">Select a Nutrition Product</h3>
 
+      {/* STEP 1: Product Selection UI */}
+      {!selectedProduct && (
+        <div className="space-y-2">
+          <Input
+            placeholder="Search for a meal item..."
+            onChange={(e) => setProductSearch(e.target.value)}
+          />
+          {isLoadingProducts ? (
+            <p>Loading products...</p>
+          ) : (
+            <ul className="max-h-48 overflow-y-auto border rounded-md bg-white">
+              {productsData?.map((product: any) => (
+                <li
+                  key={product.id}
+                  onClick={() => setSelectedProduct(product)}
+                  className="p-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
+                >
+                  {product.name} ({product.calories} kcal)
+                </li>
+              ))}
+              {productsData?.length === 0 && <li className="p-2 text-gray-500">No products found.</li>}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {/* STEP 2: Order Detail Form UI (appears after a product is selected) */}
       {selectedProduct && (
-        <Card className="mt-4 border-primary-500">
+        <Card className="mt-4 border-primary">
           <CardContent className="p-4">
-            <h3 className="text-xl font-bold mb-4">{selectedProduct.name}</h3>
+            <div className="flex justify-between items-start">
+              <div>
+                <h4 className="font-bold">{selectedProduct.name}</h4>
+                <p className="text-sm text-gray-600">{selectedProduct.quantity}</p>
+              </div>
+              <Button size="sm" variant="ghost" onClick={() => setSelectedProduct(null)}>
+                Change Product
+              </Button>
+            </div>
+            
+            <hr className="my-4" />
+
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Form fields for status, datetime, schedule, and notes */}
+                  {/* --- THIS IS THE DEFINITIVE FIX --- */}
+                  {/* The 'control={form.control}' prop is now correctly added to all FormFields */}
                   <FormField control={form.control} name="status" render={({ field }) => (
-                      <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
-                          <SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="on-hold">On Hold</SelectItem></SelectContent>
-                      </Select><FormMessage/></FormItem>
+                    <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
+                      <SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="on-hold">On Hold</SelectItem></SelectContent>
+                    </Select><FormMessage/></FormItem>
                   )}/>
                   <FormField control={form.control} name="datetime" render={({ field }) => (
-                      <FormItem><FormLabel>Start Date/Time</FormLabel><FormControl><Input type="datetime-local" {...field} /></FormControl><FormMessage/></FormItem>
+                    <FormItem><FormLabel>Start Date/Time</FormLabel><FormControl><Input type="datetime-local" {...field} /></FormControl><FormMessage/></FormItem>
                   )}/>
                   <FormField control={form.control} name="schedule_time" render={({ field }) => (
-                      <FormItem><FormLabel>Scheduled Time (HH:MM)</FormLabel><FormControl><Input type="time" {...field} /></FormControl><FormMessage/></FormItem>
+                    <FormItem><FormLabel>Scheduled Time (HH:MM)</FormLabel><FormControl><Input type="time" {...field} /></FormControl><FormMessage/></FormItem>
                   )}/>
                   <FormField control={form.control} name="schedule_frequency" render={({ field }) => (
-                      <FormItem><FormLabel>Frequency</FormLabel><FormControl><Input placeholder="e.g., daily" {...field} /></FormControl><FormMessage/></FormItem>
+                    <FormItem><FormLabel>Frequency</FormLabel><FormControl><Input placeholder="e.g., daily, weekly" {...field} /></FormControl><FormMessage/></FormItem>
                   )}/>
                   <FormField control={form.control} name="note" render={({ field }) => (
-                      <FormItem className="md:col-span-2"><FormLabel>Notes</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage/></FormItem>
+                    <FormItem className="md:col-span-2"><FormLabel>Notes</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage/></FormItem>
                   )}/>
+                  {/* ------------------------------------ */}
                 </div>
                 <div className="flex justify-end gap-2 mt-4">
-                    <Button type="button" variant="outline" onClick={() => setSelectedProduct(null)}>Cancel</Button>
-                    <Button type="submit" disabled={isPending}>{isPending ? "Saving..." : "Save Order"}</Button>
+                    <Button type="submit" disabled={isPending}>
+                        {isPending ? "Saving..." : "Save Nutrition Order"}
+                    </Button>
                 </div>
               </form>
             </Form>
@@ -143,3 +185,5 @@ export const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
     </div>
   );
 };
+
+export default NutritionOrderQuestion;
