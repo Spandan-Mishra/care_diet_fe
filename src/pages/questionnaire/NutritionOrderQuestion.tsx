@@ -65,7 +65,13 @@ const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
 
   const form = useForm<OrderFormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: { status: "active", schedule_frequency: "daily" },
+    defaultValues: { 
+      status: "active", 
+      schedule_frequency: "daily",
+      datetime: "",
+      schedule_time: "",
+      note: ""
+    },
   });
 
   const nutritionProductOptions = useMemo(

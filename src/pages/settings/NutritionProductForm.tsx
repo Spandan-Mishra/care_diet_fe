@@ -25,6 +25,8 @@ const formSchema = z.object({
   note: z.string().optional(),
 });
 
+type ProductFormData = z.infer<typeof formSchema>;
+
 const NutritionProductForm: React.FC = () => {
   const pathParams = usePathParams(FORM_ROUTE);
   const facilityId = pathParams?.facilityId || "2c50ae47-bea8-48e1-be5d-27daf87a1a89";
@@ -39,9 +41,18 @@ const NutritionProductForm: React.FC = () => {
     enabled: isEditMode,
   });
 
-  const form = useForm({
+  const form = useForm<ProductFormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: { status: "active", allergens: "" },
+    defaultValues: { 
+      status: "active", 
+      allergens: "",
+      name: "",
+      code: "",
+      quantity: "",
+      calories: 0,
+      location: "",
+      note: ""
+    },
   });
 
   useEffect(() => {
