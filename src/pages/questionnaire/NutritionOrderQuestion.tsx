@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,12 +25,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import Autocomplete from "../../components/ui/autocomplete";
 
-interface NutritionOrderQuestionProps {
+export interface NutritionOrderQuestionProps {
   facilityId: string;
   patientId: string;
   encounterId: string;
-  onSuccess: () => void;
+  question: { id: string };
+  updateQuestionnaireResponseCB: (values: any[], questionId: string) => void;
 }
 
 const formSchema = z.object({
@@ -46,7 +49,8 @@ const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
   facilityId,
   patientId,
   encounterId,
-  onSuccess,
+  question,
+  updateQuestionnaireResponseCB,
 }) => {
   const queryClient = useQueryClient();
   const [productSearch, setProductSearch] = useState("");
@@ -64,13 +68,22 @@ const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
     defaultValues: { status: "active", schedule_frequency: "daily" },
   });
 
+  const nutritionProductOptions = useMemo(
+    () =>
+      productsData?.map((product) => ({
+        label: `${product.name} (${product.calories} kcal)`,
+        value: product.id,
+      })) || [],
+    [productsData],
+  );
+
   const { mutate: createOrder, isPending } = useMutation({
     mutationFn: dietApi.createMealOrder,
-    onSuccess: () => {
+    onSuccess: (data) => {
+      updateQuestionnaireResponseCB([{ type: "structured", value: data.id }], question.id);
       alert("Nutrition Order created successfully!");
       queryClient.invalidateQueries({ queryKey: ["nutrition_orders", encounterId] });
       setSelectedProduct(null);
-      onSuccess();
     },
     onError: (error: Error) => alert(error.message),
   });
@@ -80,7 +93,6 @@ const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
       alert("Please select a nutrition product.");
       return;
     }
-
     const payload: NutritionOrderCreate = {
       patient: patientId,
       encounter: encounterId,
@@ -100,36 +112,28 @@ const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
   };
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-semibold">Select a Nutrition Product</h3>
-
+    <div className="space-y-4 border p-4 rounded-lg mt-2 bg-white">
       {!selectedProduct && (
         <div className="space-y-2">
-          <Input
-            placeholder="Search for a meal item..."
-            onChange={(e) => setProductSearch(e.target.value)}
+          <h3 className="font-semibold">Select a Nutrition Product</h3>
+          <Autocomplete
+            options={nutritionProductOptions}
+            value=""
+            onChange={(value: string) => {
+              const product = productsData?.find(p => p.id === value);
+              if (product) setSelectedProduct(product);
+            }}
+            onSearch={setProductSearch}
+            placeholder="Choose a nutrition product..."
+            inputPlaceholder="Search for a meal item..."
+            noOptionsMessage="No products found."
+            disabled={isLoadingProducts}
           />
-          {isLoadingProducts ? (
-            <p>Loading products...</p>
-          ) : (
-            <ul className="max-h-48 overflow-y-auto border rounded-md bg-white">
-              {productsData?.map((product: any) => (
-                <li
-                  key={product.id}
-                  onClick={() => setSelectedProduct(product)}
-                  className="p-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
-                >
-                  {product.name} ({product.calories} kcal)
-                </li>
-              ))}
-              {productsData?.length === 0 && <li className="p-2 text-gray-500">No products found.</li>}
-            </ul>
-          )}
         </div>
       )}
 
       {selectedProduct && (
-        <Card className="mt-4 border-primary">
+        <Card className="border-green-500">
           <CardContent className="p-4">
             <div className="flex justify-between items-start">
               <div>
@@ -140,33 +144,31 @@ const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
                 Change Product
               </Button>
             </div>
-            
             <hr className="my-4" />
-
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField control={form.control} name="status" render={({ field }) => (
+                  <FormField name="status" render={({ field }) => (
                     <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} value={field.value}>
                       <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
                       <SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="on-hold">On Hold</SelectItem></SelectContent>
                     </Select><FormMessage/></FormItem>
                   )}/>
-                  <FormField control={form.control} name="datetime" render={({ field }) => (
+                  <FormField name="datetime" render={({ field }) => (
                     <FormItem><FormLabel>Start Date/Time</FormLabel><FormControl><Input type="datetime-local" {...field} /></FormControl><FormMessage/></FormItem>
                   )}/>
-                  <FormField control={form.control} name="schedule_time" render={({ field }) => (
+                  <FormField name="schedule_time" render={({ field }) => (
                     <FormItem><FormLabel>Scheduled Time (HH:MM)</FormLabel><FormControl><Input type="time" {...field} /></FormControl><FormMessage/></FormItem>
                   )}/>
-                  <FormField control={form.control} name="schedule_frequency" render={({ field }) => (
+                  <FormField name="schedule_frequency" render={({ field }) => (
                     <FormItem><FormLabel>Frequency</FormLabel><FormControl><Input placeholder="e.g., daily, weekly" {...field} /></FormControl><FormMessage/></FormItem>
                   )}/>
-                  <FormField control={form.control} name="note" render={({ field }) => (
+                  <FormField name="note" render={({ field }) => (
                     <FormItem className="md:col-span-2"><FormLabel>Notes</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage/></FormItem>
                   )}/>
                 </div>
                 <div className="flex justify-end gap-2 mt-4">
-                    <Button type="submit" disabled={isPending}>
+                    <Button type="submit" className="text-white" disabled={isPending}>
                         {isPending ? "Saving..." : "Save Nutrition Order"}
                     </Button>
                 </div>

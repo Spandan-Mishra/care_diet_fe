@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import type { Encounter } from "../../types/encounter";
 import type { PatientRead } from "../../types/patient";
 import { useTranslation } from "react-i18next";
@@ -8,7 +8,7 @@ import type { NutritionOrder } from "../../types/nutrition_order";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { I18NNAMESPACE } from "../../types/namespace";
 import { Button } from "@/components/ui/button";
-import NutritionOrderQuestion  from "../../pages/questionnaire/NutritionOrderQuestion";
+import { navigate } from "raviger";
 
 const nutritionTabQueryClient = new QueryClient();
 
@@ -19,80 +19,58 @@ interface PluginEncounterTabProps {
 
 const NutritionOrdersTabInner: React.FC<PluginEncounterTabProps> = ({ encounter, patient }) => {
   const { t } = useTranslation(I18NNAMESPACE);
-  const [isCreating, setIsCreating] = useState(false);
+  const facilityId = "2c50ae47-bea8-48e1-be5d-27daf87a1a89";
 
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["nutrition_orders", encounter.id],
     queryFn: () => dietApi.listEncounterNutritionOrders({ encounter: encounter.id }),
   });
 
-  if (isLoading) return <div className="p-4">Loading...</div>;
+  if (isLoading) return <div className="p-4">Loading Nutrition Orders...</div>;
   if (isError) return <div className="p-4 text-red-600">Error: {error.message}</div>;
 
   const orders = data?.results || [];
 
   return (
     <div className="diet-container p-4">
-      {isCreating ? (
-        <div>
-          <h3 className="text-lg font-semibold mb-2">Add New Nutrition Order</h3>
-          <NutritionOrderQuestion
-            facilityId={"2c50ae47-bea8-48e1-be5d-27daf87a1a89"}
-            patientId={patient.id}
-            encounterId={encounter.id}
-            onSuccess={() => setIsCreating(false)}
-          />
-          <Button variant="outline" onClick={() => setIsCreating(false)} className="mt-4">
-            Cancel
-          </Button>
-        </div>
+      <div className="flex justify-end mb-4 text-white">
+        <Button 
+          onClick={() => navigate(`/facility/${facilityId}/patient/${patient.id}/encounter/${encounter.id}/questionnaire/nutrition_order`)}
+        >
+          Add New Nutrition Order
+        </Button>
+      </div>
+
+      {orders.length === 0 ? (
+        <Card>
+          <CardContent className="p-6 text-center text-gray-500">
+            {t("no_nutrition_orders_found")}
+          </CardContent>
+        </Card>
       ) : (
-        <div>
-          <div className="flex justify-end mb-4">
-            <Button onClick={() => setIsCreating(true)}>
-              Add New Nutrition Order
-            </Button>
-          </div>
-          {orders.length === 0 ? (
-            <Card>
-              <CardContent className="p-6 text-center text-gray-500">
-                {t("no_nutrition_orders_found")}
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardContent className="p-0">
-              {orders.length > 0 ? (
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Products</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Schedule</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date/Time</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notes</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {orders.map((order) => (
-                      <tr key={order.id}>
-                        <td className="px-6 py-4">{order.products.map((p) => p.name).join(", ")}</td>
-                        <td className="px-6 py-4 capitalize">{order.status}</td>
-                        <td className="px-6 py-4">{order.schedule?.frequency || "-"}</td>
-                        <td className="px-6 py-4">{order.datetime}</td>
-                        <td className="px-6 py-4">{order.note || "-"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <div className="p-6 text-center text-gray-500">
-                  {t("no_nutrition_orders_found")}
+        <div className="space-y-4">
+          {orders.map((order) => (
+            <Card key={order.id} className="overflow-hidden">
+              <CardContent className="p-4 grid grid-cols-1 md:grid-cols-4 gap-2">
+                <div>
+                  <p className="text-sm font-semibold text-gray-700">Products</p>
+                  <p className="text-sm">{order.products.map((p) => p.name).join(", ") || "N/A"}</p>
                 </div>
-              )}
+                <div>
+                  <p className="text-sm font-semibold text-gray-700">Status</p>
+                  <p className="text-sm capitalize">{order.status}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-700">Prescribed On</p>
+                  <p className="text-sm">{order.datetime}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-700">Prescribed By</p>
+                  <p className="text-sm">{order.prescribed_by || "N/A"}</p>
+                </div>
               </CardContent>
             </Card>
-          )}
+          ))}
         </div>
       )}
     </div>
