@@ -9,8 +9,8 @@ const VIEW_ROUTE = "/facility/:facilityId/settings/nutrition_products/:productId
 
 const NutritionProductView: React.FC = () => {
 const pathParams = usePathParams(VIEW_ROUTE);
-  const facilityId = pathParams?.facilityId || "2c50ae47-bea8-48e1-be5d-27daf87a1a89";
-  const productId = pathParams?.productId || "4c199a82-a6d3-4718-aedf-7627ecd36683";
+  const facilityId = pathParams?.facilityId;
+  const productId = pathParams?.productId;
 
   const { data: product, isLoading } = useQuery({
     queryKey: ["nutrition_product", productId],

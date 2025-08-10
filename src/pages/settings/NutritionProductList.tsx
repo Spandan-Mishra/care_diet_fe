@@ -1,6 +1,6 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { navigate } from "raviger";
+import { navigate, usePathParams } from "raviger";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -14,17 +14,23 @@ import {
 import { dietApi } from "../../api/dietApi";
 import type { NutritionProduct } from "../../types/nutrition_product";
 
+const LIST_ROUTE = "/facility/:facilityId/settings/nutrition_products";
 
 const NutritionProductList: React.FC = () => {
-  const facilityId = "2c50ae47-bea8-48e1-be5d-27daf87a1a89";
+  const pathParams = usePathParams(LIST_ROUTE);
+  const facilityId = pathParams?.facilityId;
 
   const { data: response, isLoading } = useQuery({
     queryKey: ["nutrition_products", facilityId],
-    queryFn: () => dietApi.listNutritionProducts({ facility: facilityId }),
+    queryFn: () => dietApi.listNutritionProducts({ facility: facilityId! }),
     enabled: !!facilityId,
   });
 
   const products = response?.results || [];
+
+  if (!facilityId) {
+    return <div className="p-4">Invalid facility ID</div>;
+  }
 
   return (
     <div className="p-4">

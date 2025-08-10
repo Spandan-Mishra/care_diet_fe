@@ -19,7 +19,7 @@ interface PluginEncounterTabProps {
 
 const NutritionOrdersTabInner: React.FC<PluginEncounterTabProps> = ({ encounter, patient }) => {
   const { t } = useTranslation(I18NNAMESPACE);
-  const facilityId = "2c50ae47-bea8-48e1-be5d-27daf87a1a89";
+  const facilityId = encounter.facility.id;
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["nutrition_orders", encounter.id],

@@ -4,6 +4,12 @@ import routes from "./routes";
 const manifest = {
   plugin: "care_diet_fe",
   routes,
+  navItems: [
+    {
+      name: "Nutrition Products",
+      url: "settings/nutrition_products",
+    },
+  ],
   components: {
     NutritionOrderQuestion: lazy(
       () => import("./pages/questionnaire/NutritionOrderQuestion")

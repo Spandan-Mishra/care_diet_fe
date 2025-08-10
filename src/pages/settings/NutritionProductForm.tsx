@@ -29,7 +29,7 @@ type ProductFormData = z.infer<typeof formSchema>;
 
 const NutritionProductForm: React.FC = () => {
   const pathParams = usePathParams(FORM_ROUTE);
-  const facilityId = pathParams?.facilityId || "2c50ae47-bea8-48e1-be5d-27daf87a1a89";
+  const facilityId = pathParams?.facilityId;
   const productId = pathParams?.productId;
   const isEditMode = !!productId;
   
@@ -103,6 +103,10 @@ const NutritionProductForm: React.FC = () => {
   //   return <div className="p-4 text-red-500 font-bold">Developer Action: Set a valid Canteen Location UUID in NutritionProductForm.tsx</div>;
   // }
   useEffect(() => form.setValue("location", canteenLocationId), [canteenLocationId, form]);
+
+  if (!facilityId) {
+    return <div className="p-4">Invalid facility ID</div>;
+  }
 
   if (isDataLoading) return <div title="Loading..."><div className="p-4">Loading Form...</div></div>;
 
