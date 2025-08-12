@@ -24,10 +24,10 @@ const CanteenDashboard: React.FC<CanteenDashboardProps> = ({ facilityId }) => {
     },
   });
 
-  if (isLoading) return <div className="p-4">Loading...</div>;
+  if (isLoading) return <div className="diet-container p-4">Loading...</div>;
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="diet-container p-4 space-y-4">
       <Card>
         <CardHeader>
           <CardTitle>Canteen: Active Meal Orders</CardTitle>

@@ -4,7 +4,6 @@ import type { PatientRead } from "../../types/patient";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "../ui/card";
 import { dietApi } from "../../api/dietApi";
-import type { NutritionOrder } from "../../types/nutrition_order";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { I18NNAMESPACE } from "../../types/namespace";
 import { Button } from "@/components/ui/button";

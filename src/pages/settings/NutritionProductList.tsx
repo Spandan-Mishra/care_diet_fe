@@ -29,11 +29,11 @@ const NutritionProductList: React.FC = () => {
   const products = response?.results || [];
 
   if (!facilityId) {
-    return <div className="p-4">Invalid facility ID</div>;
+    return <div className="diet-container p-4">Invalid facility ID</div>;
   }
 
   return (
-    <div className="p-4">
+    <div className="diet-container p-4">
       <div className="container mx-auto">
         <div className="mb-6 flex items-center justify-between">
           <div>

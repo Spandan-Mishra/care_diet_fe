@@ -111,7 +111,7 @@ const NutritionProductForm: React.FC = () => {
   if (isDataLoading) return <div title="Loading..."><div className="p-4">Loading Form...</div></div>;
 
   return (
-    <div title={isEditMode ? "Edit Product" : "Create Product"}>
+    <div className="diet-container" title={isEditMode ? "Edit Product" : "Create Product"}>
       <div className="container mx-auto max-w-3xl">
         <h1 className="text-2xl font-bold mb-4">{isEditMode ? "Edit Nutrition Product" : "Create New Product"}</h1>
         <Form {...form}>

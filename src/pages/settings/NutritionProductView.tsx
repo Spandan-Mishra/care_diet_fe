@@ -18,11 +18,11 @@ const pathParams = usePathParams(VIEW_ROUTE);
     enabled: !!productId,
   });
 
-  if (isLoading) return <div title="Loading..."><div className="p-4">Loading Product...</div></div>;
-  if (!product) return <div title="Error"><div className="p-4">Product Not Found</div></div>;
+  if (isLoading) return <div className="diet-container" title="Loading..."><div className="p-4">Loading Product...</div></div>;
+  if (!product) return <div className="diet-container" title="Error"><div className="p-4">Product Not Found</div></div>;
 
   return (
-    <div title={product.name}>
+    <div className="diet-container" title={product.name}>
       <div className="container mx-auto max-w-3xl">
         <div className="flex justify-between items-center mb-4">
           <div>

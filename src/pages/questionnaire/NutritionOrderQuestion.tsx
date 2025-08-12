@@ -118,7 +118,7 @@ const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
   };
 
   return (
-    <div className="space-y-4 border p-4 rounded-lg mt-2 bg-white">
+    <div className="diet-container space-y-4 border p-4 rounded-lg mt-2 bg-white">
       {!selectedProduct && (
         <div className="space-y-2">
           <h3 className="font-semibold">Select a Nutrition Product</h3>
