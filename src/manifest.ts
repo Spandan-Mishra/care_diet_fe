@@ -14,6 +14,9 @@ const manifest = {
     NutritionOrderQuestion: lazy(
       () => import("./pages/questionnaire/NutritionOrderQuestion")
     ),
+    LocationCanteenDashboard: lazy(
+      () => import("./pages/LocationCanteenDashboard")
+    ),
   },
   encounterTabs: {
     nutrition_orders: lazy(() => import("./components/encounter-tabs/EncounterNutritionOrdersTab")),

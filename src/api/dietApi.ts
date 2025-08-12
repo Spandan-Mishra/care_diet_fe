@@ -59,7 +59,7 @@ export const dietApi = {
     });
   },
 
-  listCanteenOrders: async (query: { facility: string }) => {
+  listCanteenOrders: async (query: { facility: string; location?: string }) => {
     return await request<PaginatedResponse<NutritionOrder>>(
       `/api/care_diet/canteen-orders/${queryString(query)}`
     );
