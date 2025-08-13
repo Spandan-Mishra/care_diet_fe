@@ -1,7 +1,5 @@
-// This is the key that the main Care app uses to store the auth token.
 const CARE_ACCESS_TOKEN_LOCAL_STORAGE_KEY = "care_access_token";
 
-// This is a direct copy of the working APIError class from the other plugin.
 export class APIError extends Error {
   message: string;
   data: unknown;
@@ -16,13 +14,10 @@ export class APIError extends Error {
   }
 }
 
-// This is the core API request function, adapted from the working example.
-// It will correctly get the API URL and the auth token.
 export async function request<Response>(
   path: string,
   options?: RequestInit
 ): Promise<Response> {
-  // This global variable is set by the main care-fe application.
   const url = `${(window as any).__CORE_ENV__?.apiUrl || ""}${path}`;
 
   const defaultHeaders = {
@@ -43,11 +38,10 @@ export async function request<Response>(
   const response = await fetch(url, requestInit);
 
   let data: any = null;
-  if (response.status !== 204) { // 204 No Content has no body
+  if (response.status !== 204) {
     try {
         data = await response.json();
     } catch (e) {
-        // Handle cases where response is not JSON
         console.error("Response was not valid JSON.", e);
     }
   }
@@ -64,7 +58,6 @@ export async function request<Response>(
   return data as Response;
 }
 
-// A simple utility to build a query string from an object.
 export const queryString = (
   params?: Record<string, any>
 ) => {

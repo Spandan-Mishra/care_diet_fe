@@ -99,9 +99,6 @@ const NutritionProductForm: React.FC = () => {
   };
   
   const canteenLocationId = "77a8b1ac-fdff-4f14-a112-09ae58c220b4";
-  // if (canteenLocationId === "YOUR_CANTEEN_LOCATION_UUID_HERE") {
-  //   return <div className="p-4 text-red-500 font-bold">Developer Action: Set a valid Canteen Location UUID in NutritionProductForm.tsx</div>;
-  // }
   useEffect(() => form.setValue("location", canteenLocationId), [canteenLocationId, form]);
 
   if (!facilityId) {

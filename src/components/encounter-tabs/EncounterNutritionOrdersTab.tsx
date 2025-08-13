@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-quer
 import { I18NNAMESPACE } from "../../types/namespace";
 import { Button } from "@/components/ui/button";
 import { navigate } from "raviger";
+import { PlusIcon } from "lucide-react";
 
 const nutritionTabQueryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const NutritionOrdersTabInner: React.FC<PluginEncounterTabProps> = ({ encounter,
   if (isError) return <div className="p-4 text-red-600">Error: {error.message}</div>;
 
   const orders = data?.results || [];
+  console.log(orders);
 
   return (
     <div className="diet-container p-4">
@@ -36,6 +38,7 @@ const NutritionOrdersTabInner: React.FC<PluginEncounterTabProps> = ({ encounter,
         <Button 
           onClick={() => navigate(`/facility/${facilityId}/patient/${patient.id}/encounter/${encounter.id}/questionnaire/nutrition_order`)}
         >
+          <PlusIcon />
           Add New Nutrition Order
         </Button>
       </div>

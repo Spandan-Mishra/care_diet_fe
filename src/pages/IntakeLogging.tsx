@@ -81,14 +81,12 @@ export default function IntakeLogging({ facilityId, locationId }: IntakeLoggingP
     },
   });
 
-  // Fetch all nutrition orders for the facility (canteen orders)
   const { data: nutritionOrders, isLoading: isLoadingOrders } = useQuery({
     queryKey: ["canteen-orders", facilityId],
     queryFn: () => dietApi.listCanteenOrders({ facility: facilityId }),
     enabled: !!facilityId,
   });
 
-  // Fetch existing intake logs
   const { data: intakeLogsData, isLoading: isLoadingLogs } = useQuery({
     queryKey: ["intake-logs", facilityId, locationId],
     queryFn: () => dietApi.listIntakeLogs({ facility: facilityId, location: locationId }),
@@ -144,20 +142,18 @@ export default function IntakeLogging({ facilityId, locationId }: IntakeLoggingP
     setSelectedNutritionOrder(order);
     form.setValue("nutrition_order_id", order.id);
     
-    // Pre-populate intake items from nutrition order products
-    // Since products appear to be just IDs, we'll handle them appropriately
     const orderItems: IntakeItem[] = Array.isArray(order.products) 
       ? order.products.map((product, index) => ({
           product_id: typeof product === 'string' ? product : product.id,
           name: typeof product === 'object' && product.name ? product.name : `Product ${index + 1}`,
-          quantity: "0", // Default to 0, staff will input actual consumed quantity
+          quantity: "0",
           original_quantity: typeof product === 'object' && product.quantity ? product.quantity.toString() : "1",
         }))
       : [];
     
     setSelectedItems(orderItems);
     form.setValue("intake_items", orderItems);
-    setIsDialogOpen(true); // Open the dialog when order is selected
+    setIsDialogOpen(true);
   };
 
   const updateItemQuantity = (productId: string, quantity: string) => {
@@ -280,7 +276,7 @@ export default function IntakeLogging({ facilityId, locationId }: IntakeLoggingP
 
       {/* Intake Logging Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto p-6">
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto p-6 bg-white">
           <DialogHeader>
             <DialogTitle>Create Intake Log</DialogTitle>
             <DialogDescription>
@@ -411,11 +407,11 @@ export default function IntakeLogging({ facilityId, locationId }: IntakeLoggingP
                   <h4 className="font-medium">Food Items Consumption</h4>
                   {selectedItems.length > 0 ? (
                     <div className="space-y-3">
-                      {selectedItems.map((item, index) => (
+                      {selectedItems.map((item) => (
                         <div key={item.product_id} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
-                              <h5 className="font-medium">Item #{index + 1}</h5>
+                              <h5 className="font-medium">{item.name}</h5>
                               <p className="text-sm text-gray-600 mt-1">
                                 Product ID: {item.product_id.slice(-8)} | 
                                 Original quantity: {item.original_quantity || "1"}
@@ -471,6 +467,7 @@ export default function IntakeLogging({ facilityId, locationId }: IntakeLoggingP
             </Button>
             <Button
               type="submit"
+              className="text-white"
               disabled={createIntakeLogMutation.isPending}
               onClick={form.handleSubmit(onSubmit)}
             >
@@ -518,7 +515,7 @@ export default function IntakeLogging({ facilityId, locationId }: IntakeLoggingP
                           {new Date(log.occurrence_datetime).toLocaleString()}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={STATUS_COLORS[log.status as keyof typeof STATUS_COLORS] || "secondary"}>
+                          <Badge variant={STATUS_COLORS[log.status as keyof typeof STATUS_COLORS] || "secondary"} className="text-white">
                             {CONSUMPTION_STATUS_OPTIONS.find(opt => opt.value === log.status)?.label || log.status}
                           </Badge>
                         </TableCell>
