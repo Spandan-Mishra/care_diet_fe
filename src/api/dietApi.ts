@@ -77,4 +77,10 @@ export const dietApi = {
       body: JSON.stringify(body),
     });
   },
+
+  listIntakeLogs: async (query: { facility: string; location?: string }) => {
+    return await request<PaginatedResponse<NutritionIntake>>(
+      `/api/care_diet/intake-logs/${queryString(query)}`
+    );
+  },
 };
