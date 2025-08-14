@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -78,7 +77,7 @@ const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
 }) => {
   const queryClient = useQueryClient();
   const [productSearch, setProductSearch] = useState("");
-  const [selectedProduct, setSelectedProduct] = useState<NutritionProduct | null>(null);
+  const [selectedProducts, setSelectedProducts] = useState<NutritionProduct[]>([]);
 
   const { data: productsData, isLoading: isLoadingProducts } = useQuery({
     queryKey: ["nutrition_products_search", facilityId, productSearch],
@@ -128,14 +127,26 @@ const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
       updateQuestionnaireResponseCB([{ type: "structured", value: data.id }], question.id);
       alert("Nutrition Order created successfully!");
       queryClient.invalidateQueries({ queryKey: ["nutrition_orders", encounterId] });
-      setSelectedProduct(null);
+      setSelectedProducts([]);
+      form.reset();
     },
     onError: (error: Error) => alert(error.message),
   });
 
+  const addProduct = (productId: string) => {
+    const product = productsData?.find(p => p.id === productId);
+    if (product && !selectedProducts.some(p => p.id === product.id)) {
+      setSelectedProducts([...selectedProducts, product]);
+    }
+  };
+
+  const removeProduct = (productId: string) => {
+    setSelectedProducts(selectedProducts.filter(p => p.id !== productId));
+  };
+
   const onSubmit = (data: OrderFormData) => {
-    if (!selectedProduct) {
-      alert("Please select a nutrition product.");
+    if (selectedProducts.length === 0) {
+      alert("Please add at least one nutrition product.");
       return;
     }
     const payload: NutritionOrderCreate = {
@@ -143,7 +154,7 @@ const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
       encounter: encounterId,
       facility: facilityId,
       location: data.location,
-      products: [selectedProduct.id],
+      products: selectedProducts.map(p => p.id),
       datetime: new Date(data.datetime).toISOString(),
       status: data.status,
       schedule: {
@@ -158,85 +169,85 @@ const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
 
   return (
     <div className="diet-container space-y-4 border p-4 rounded-lg mt-2 bg-white">
-      {!selectedProduct && (
-        <div className="space-y-2">
-          <h3 className="font-semibold">Select a Nutrition Product</h3>
-          <Autocomplete
-            options={nutritionProductOptions}
-            value=""
-            onChange={(value: string) => {
-              const product = productsData?.find(p => p.id === value);
-              if (product) setSelectedProduct(product);
-            }}
-            onSearch={setProductSearch}
-            placeholder="Choose a nutrition product..."
-            inputPlaceholder="Search for a meal item..."
-            noOptionsMessage="No products found."
-            disabled={isLoadingProducts}
-          />
-        </div>
-      )}
-
-      {selectedProduct && (
-        <Card className="border-green-500">
-          <CardContent className="p-4">
-            <div className="flex justify-between items-start">
-              <div>
-                <h4 className="font-bold">{selectedProduct.name}</h4>
-                <p className="text-sm text-gray-600">{selectedProduct.quantity}</p>
+      <div className="space-y-2">
+        <h3 className="font-semibold">Add Nutrition Products</h3>
+        <Autocomplete
+          options={nutritionProductOptions}
+          value=""
+          onChange={addProduct}
+          onSearch={setProductSearch}
+          placeholder="Choose a nutrition product..."
+          inputPlaceholder="Search for a meal item..."
+          noOptionsMessage="No products found."
+          disabled={isLoadingProducts}
+        />
+        {selectedProducts.length > 0 && (
+          <div className="mt-2">
+            <h4 className="font-semibold mb-1">Selected Products:</h4>
+            <ul className="space-y-1">
+              {selectedProducts.map(product => (
+                <li key={product.id} className="flex items-center justify-between border p-2 rounded">
+                  <div>
+                    <span className="font-bold">{product.name}</span>
+                    <span className="ml-2 text-sm text-gray-600">{product.quantity}</span>
+                  </div>
+                  <Button size="sm" variant="ghost" onClick={() => removeProduct(product.id)}>
+                    Remove
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+      <Card className="border-green-500">
+        <CardContent className="p-4">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField name="status" render={({ field }) => (
+                  <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
+                    <SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="on-hold">On Hold</SelectItem></SelectContent>
+                  </Select><FormMessage/></FormItem>
+                )}/>
+                <FormField name="datetime" render={({ field }) => (
+                  <FormItem><FormLabel>Start Date/Time</FormLabel><FormControl><Input type="datetime-local" {...field} /></FormControl><FormMessage/></FormItem>
+                )}/>
+                <FormField name="schedule_time" render={({ field }) => (
+                  <FormItem><FormLabel>Scheduled Time (HH:MM)</FormLabel><FormControl><Input type="time" {...field} /></FormControl><FormMessage/></FormItem>
+                )}/>
+                <FormField name="schedule_frequency" render={({ field }) => (
+                  <FormItem><FormLabel>Frequency</FormLabel><FormControl><Input placeholder="e.g., daily, weekly" {...field} /></FormControl><FormMessage/></FormItem>
+                )}/>
+                <FormField name="location" render={({ field }) => (
+                  <FormItem><FormLabel>Location *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Select location" /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        {locationOptions.map((location: {label: string, value: string}) => (
+                          <SelectItem key={location.value} value={location.value}>
+                            {location.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  <FormMessage/>
+                  </FormItem>
+                )}/>
+                <FormField name="note" render={({ field }) => (
+                  <FormItem className="md:col-span-2"><FormLabel>Notes</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage/></FormItem>
+                )}/>
               </div>
-              <Button size="sm" variant="ghost" onClick={() => setSelectedProduct(null)}>
-                Change Product
-              </Button>
-            </div>
-            <hr className="my-4" />
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField name="status" render={({ field }) => (
-                    <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
-                      <SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="on-hold">On Hold</SelectItem></SelectContent>
-                    </Select><FormMessage/></FormItem>
-                  )}/>
-                  <FormField name="datetime" render={({ field }) => (
-                    <FormItem><FormLabel>Start Date/Time</FormLabel><FormControl><Input type="datetime-local" {...field} /></FormControl><FormMessage/></FormItem>
-                  )}/>
-                  <FormField name="schedule_time" render={({ field }) => (
-                    <FormItem><FormLabel>Scheduled Time (HH:MM)</FormLabel><FormControl><Input type="time" {...field} /></FormControl><FormMessage/></FormItem>
-                  )}/>
-                  <FormField name="schedule_frequency" render={({ field }) => (
-                    <FormItem><FormLabel>Frequency</FormLabel><FormControl><Input placeholder="e.g., daily, weekly" {...field} /></FormControl><FormMessage/></FormItem>
-                  )}/>
-                  <FormField name="location" render={({ field }) => (
-                    <FormItem><FormLabel>Location *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Select location" /></SelectTrigger></FormControl>
-                        <SelectContent>
-                          {locationOptions.map((location: {label: string, value: string}) => (
-                            <SelectItem key={location.value} value={location.value}>
-                              {location.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    <FormMessage/>
-                    </FormItem>
-                  )}/>
-                  <FormField name="note" render={({ field }) => (
-                    <FormItem className="md:col-span-2"><FormLabel>Notes</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage/></FormItem>
-                  )}/>
-                </div>
-                <div className="flex justify-end gap-2 mt-4">
-                    <Button type="submit" className="text-white" disabled={isPending}>
-                        {isPending ? "Saving..." : "Save Nutrition Order"}
-                    </Button>
-                </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-      )}
+              <div className="flex justify-end gap-2 mt-4">
+                  <Button type="submit" className="text-white" disabled={isPending}>
+                      {isPending ? "Saving..." : "Save Nutrition Order"}
+                  </Button>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
     </div>
   );
 };
