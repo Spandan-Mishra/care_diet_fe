@@ -12,7 +12,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { dietApi, type NutritionProductCreate } from "../../api/dietApi";
 
-const FORM_ROUTE = "/facility/:facilityId/settings/nutrition_products/:productId/edit";
+const EDIT_ROUTE = "/facility/:facilityId/settings/nutrition_products/:productId/edit";
+const CREATE_ROUTE = "/facility/:facilityId/settings/nutrition_products/new";
+
+const canteenLocationId = "77a8b1ac-fdff-4f14-a112-09ae58c220b4";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -28,9 +31,11 @@ const formSchema = z.object({
 type ProductFormData = z.infer<typeof formSchema>;
 
 const NutritionProductForm: React.FC = () => {
-  const pathParams = usePathParams(FORM_ROUTE);
-  const facilityId = pathParams?.facilityId;
-  const productId = pathParams?.productId;
+  const editParams = usePathParams(EDIT_ROUTE);
+  const createParams = usePathParams(CREATE_ROUTE);
+  
+  const facilityId = editParams?.facilityId || createParams?.facilityId;
+  const productId = editParams?.productId;
   const isEditMode = !!productId;
   
   const queryClient = useQueryClient();
@@ -50,7 +55,7 @@ const NutritionProductForm: React.FC = () => {
       code: "",
       quantity: "",
       calories: 0,
-      location: "",
+      location: canteenLocationId,
       note: ""
     },
   });
@@ -70,7 +75,7 @@ const NutritionProductForm: React.FC = () => {
     }
   }, [existingData, form]);
 
-  const { mutate: createOrUpdateProduct, isPending } = useMutation({
+  const { mutate: createOrUpdateProduct, isPending, error: mutationError } = useMutation({
     mutationFn: (data: NutritionProductCreate) => {
       return isEditMode
         ? dietApi.updateNutritionProduct(productId!, data)
@@ -81,7 +86,8 @@ const NutritionProductForm: React.FC = () => {
       navigate(`/facility/${facilityId}/settings/nutrition_products/${data.id}`);
     },
     onError: (error: Error) => {
-      alert(error);
+      console.error("Error submitting form:", error);
+      alert(error.message || "An error occurred while saving the product");
     },
   });
 
@@ -97,20 +103,22 @@ const NutritionProductForm: React.FC = () => {
     };
     createOrUpdateProduct(payload);
   };
-  
-  const canteenLocationId = "77a8b1ac-fdff-4f14-a112-09ae58c220b4";
-  useEffect(() => form.setValue("location", canteenLocationId), [canteenLocationId, form]);
 
   if (!facilityId) {
     return <div className="p-4">Invalid facility ID</div>;
   }
 
-  if (isDataLoading) return <div title="Loading..."><div className="p-4">Loading Form...</div></div>;
+  if (isEditMode && isDataLoading) return <div title="Loading..."><div className="p-4">Loading Form...</div></div>;
 
   return (
     <div className="diet-container" title={isEditMode ? "Edit Product" : "Create Product"}>
       <div className="container mx-auto max-w-3xl">
         <h1 className="text-2xl font-bold mb-4">{isEditMode ? "Edit Nutrition Product" : "Create New Product"}</h1>
+        {mutationError && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            Error: {mutationError instanceof Error ? mutationError.message : "Unknown error"}
+          </div>
+        )}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <Card>
@@ -149,6 +157,9 @@ const NutritionProductForm: React.FC = () => {
                 )}/>
                 <FormField name="note" render={({ field }) => (
                     <FormItem><FormLabel>Notes</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
+                )}/>
+                <FormField name="location" render={({ field }) => (
+                  <input type="hidden" {...field} />
                 )}/>
               </CardContent>
             </Card>
