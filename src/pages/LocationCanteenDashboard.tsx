@@ -61,8 +61,10 @@ const LocationCanteenDashboard: React.FC<LocationCanteenDashboardProps> = ({ fac
     <div className="diet-container p-4 space-y-4">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">Canteen Orders</h1>
-          <p className="text-gray-600">Location ID: {locationId}</p>
+          <h1 className="text-2xl font-bold text-left">Canteen Orders</h1>
+          <p className="text-sm text-gray-600 mt-1">
+            Canteen Dashboard for viewing and updating nutrition orders
+          </p>
         </div>
       </div>
 

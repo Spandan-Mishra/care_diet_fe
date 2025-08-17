@@ -179,7 +179,7 @@ export default function IntakeLogging({ facilityId, locationId }: IntakeLoggingP
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Intake Logging</h1>
+          <h1 className="text-2xl font-bold text-gray-900 text-left">Intake Logging</h1>
           <p className="text-sm text-gray-600 mt-1">
             Log food consumption for nutrition orders
           </p>
@@ -491,12 +491,12 @@ export default function IntakeLogging({ facilityId, locationId }: IntakeLoggingP
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Patient</TableHead>
-                    <TableHead>Date & Time</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Items</TableHead>
-                    <TableHead>Logged By</TableHead>
-                    <TableHead>Notes</TableHead>
+                    <TableHead className="text-center">Patient</TableHead>
+                    <TableHead className="text-center">Date & Time</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
+                    <TableHead className="text-center">Items</TableHead>
+                    <TableHead className="text-center">Logged By</TableHead>
+                    <TableHead className="text-center">Notes</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
