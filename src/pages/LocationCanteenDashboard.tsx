@@ -1,19 +1,22 @@
-import React from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { dietApi } from "../api/dietApi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+
+import NutritionOrderSheet from "../components/NutritionOrderSheet";
+import { ArrowUpRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface LocationCanteenDashboardProps {
   facilityId: string;
   locationId: string;
 }
 
-const LocationCanteenDashboard: React.FC<LocationCanteenDashboardProps> = ({ 
-  facilityId, 
-  locationId 
-}) => {
+const LocationCanteenDashboard: React.FC<LocationCanteenDashboardProps> = ({ facilityId, locationId }) => {
   const queryClient = useQueryClient();
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["location_canteen_orders", facilityId, locationId],
@@ -43,6 +46,11 @@ const LocationCanteenDashboard: React.FC<LocationCanteenDashboardProps> = ({
     return status.replace(/-/g, " ").replace(/\b\w/g, l => l.toUpperCase());
   };
 
+  const handleViewMeal = (order: any) => {
+    setSelectedOrder(order);
+    setSheetOpen(true);
+  };
+
   if (!facilityId || !locationId) {
     return <div className="diet-container p-4">Invalid facility or location ID</div>;
   }
@@ -67,58 +75,83 @@ const LocationCanteenDashboard: React.FC<LocationCanteenDashboardProps> = ({
             <table className="min-w-full">
               <thead>
                 <tr className="border-b">
-                  <th className="p-3 text-left">Patient</th>
-                  <th className="p-3 text-left">Room/Bed</th>
-                  <th className="p-3 text-left">Products</th>
-                  <th className="p-3 text-left">Order Time</th>
-                  <th className="p-3 text-left">Status</th>
-                  <th className="p-3 text-left">Actions</th>
+                  <th className="p-3 text-center">Patient</th>
+                  <th className="p-3 text-center">Room/Bed</th>
+                  <th className="p-3 text-center">Products</th>
+                  <th className="p-3 text-center">Scheduled Time</th>
+                  <th className="p-3 text-center">Status</th>
+                  <th className="p-3 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {data?.results?.map((order: any) => (
-                  <tr key={order.id} className="border-b hover:bg-gray-50">
-                    <td className="p-3">
-                      <div className="font-medium">{order.patient.name}</div>
-                      <div className="text-sm text-gray-500">ID: {order.patient.id}</div>
-                    </td>
-                    <td className="p-3">
-                      <div className="text-sm">{order.encounter.current_bed || "No bed assigned"}</div>
-                    </td>
-                    <td className="p-3">
-                      <div className="text-sm">
-                        {order.products.map((p: any) => p.name).join(", ")}
-                      </div>
-                    </td>
-                    <td className="p-3">
-                      <div className="text-sm">
-                        {new Date(order.datetime).toLocaleString()}
-                      </div>
-                    </td>
-                    <td className="p-3">
-                      <Badge className={getStatusColor(order.status)}>
-                        {formatStatus(order.status)}
-                      </Badge>
-                    </td>
-                    <td className="p-3">
-                      <select
-                        value={order.status}
-                        onChange={(e) => updateStatusMutation.mutate({ 
-                          orderId: order.id, 
-                          status: e.target.value 
-                        })}
-                        className="text-sm p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        disabled={updateStatusMutation.isPending}
-                      >
-                        <option value="active">Active</option>
-                        <option value="in-preparation">In Preparation</option>
-                        <option value="served">Served</option>
-                        <option value="on-hold">On Hold</option>
-                        <option value="completed">Completed</option>
-                      </select>
-                    </td>
-                  </tr>
-                ))}
+                {data?.results?.map((order: any) => {
+                  // Handle both old and new data structures
+                  const patientName = (typeof order.patient === 'object' && order.patient?.name) 
+                    ? order.patient.name 
+                    : (typeof order.patient === 'string' ? order.patient : "Unknown Patient");
+                    
+                  const patientId = (typeof order.patient === 'object' && order.patient?.id) 
+                    ? order.patient.id 
+                    : (typeof order.patient === 'string' ? order.patient : "Unknown ID");
+                    
+                  const roomBed = (typeof order.encounter === 'object' && order.encounter?.current_bed) 
+                    ? order.encounter.current_bed 
+                    : "No bed assigned";
+                    
+                  const products = Array.isArray(order.products) && order.products.length > 0
+                    ? order.products.map((p: any) => typeof p === 'object' ? p.name : p).join(", ")
+                    : "No products";
+                  
+                  return (
+                    <tr key={order.id} className="border-b hover:bg-gray-50">
+                      <td className="p-3">
+                        <div className="font-medium">{patientName}</div>
+                      </td>
+                      <td className="p-3">
+                        <div className="text-sm">{roomBed}</div>
+                      </td>
+                      <td className="p-3">
+                        <div className="text-sm max-w-xs truncate" title={products}>
+                          {products}
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <div className="text-sm">
+                          {order.datetime ? new Date(order.datetime).toLocaleString() : "-"}
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <div className="space-y-2">
+                          <select
+                            value={order.status}
+                            onChange={(e) => updateStatusMutation.mutate({ 
+                              orderId: order.id, 
+                              status: e.target.value 
+                            })}
+                            className="text-sm p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+                            disabled={updateStatusMutation.isPending}
+                          >
+                            <option value="active">Active</option>
+                            <option value="in-preparation">In Preparation</option>
+                            <option value="served">Served</option>
+                            <option value="on-hold">On Hold</option>
+                            <option value="completed">Completed</option>
+                          </select>
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <Button
+                          variant="outline"
+                          className="font-medium hover:text-blue-800"
+                          onClick={() => handleViewMeal(order)}
+                        >
+                          View Meal
+                          <ArrowUpRight />
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
                 {data?.results?.length === 0 && (
                   <tr>
                     <td colSpan={6} className="p-6 text-center text-gray-500">
@@ -131,6 +164,12 @@ const LocationCanteenDashboard: React.FC<LocationCanteenDashboardProps> = ({
           </div>
         </CardContent>
       </Card>
+
+      <NutritionOrderSheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        order={selectedOrder}
+      />
     </div>
   );
 };

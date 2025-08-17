@@ -199,13 +199,13 @@ export default function IntakeLogging({ facilityId, locationId }: IntakeLoggingP
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Order ID</TableHead>
-                    <TableHead>Patient</TableHead>
-                    <TableHead>Date & Time</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Products</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>Action</TableHead>
+                    <TableHead className="text-center">Order ID</TableHead>
+                    <TableHead className="text-center">Patient</TableHead>
+                    <TableHead className="text-center">Date & Time</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
+                    <TableHead className="text-center">Products</TableHead>
+                    <TableHead className="text-center">Location</TableHead>
+                    <TableHead className="text-center">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -224,7 +224,7 @@ export default function IntakeLogging({ facilityId, locationId }: IntakeLoggingP
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <User className="w-4 h-4 text-gray-500" />
-                            <span>Patient ID: {typeof order.patient === 'string' ? order.patient.slice(-6) : order.patient?.name || "Unknown Patient"}</span>
+                            <span>{typeof order.patient === 'string' ? order.patient.slice(-6) : order.patient?.name || "Unknown Patient"}</span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -296,7 +296,7 @@ export default function IntakeLogging({ facilityId, locationId }: IntakeLoggingP
                         <div className="space-y-1 text-sm text-blue-800">
                           <div className="flex items-center gap-2">
                             <User className="w-4 h-4" />
-                            <span>Patient ID: {typeof selectedNutritionOrder.patient === 'string' ? selectedNutritionOrder.patient.slice(-6) : selectedNutritionOrder.patient?.name}</span>
+                            <span>{typeof selectedNutritionOrder.patient === 'string' ? selectedNutritionOrder.patient.slice(-6) : selectedNutritionOrder.patient?.name}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <MapPin className="w-4 h-4" />
@@ -424,6 +424,7 @@ export default function IntakeLogging({ facilityId, locationId }: IntakeLoggingP
                                   type="number"
                                   min="0"
                                   step="0.1"
+                                  max="1"
                                   placeholder="0"
                                   value={item.quantity}
                                   onChange={(e) => updateItemQuantity(item.product_id, e.target.value)}
