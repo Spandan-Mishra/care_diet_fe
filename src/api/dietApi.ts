@@ -78,7 +78,7 @@ export const dietApi = {
     });
   },
 
-  listIntakeLogs: async (query: { facility: string; location?: string; nutrition_order?: string }) => {
+  listIntakeLogs: async (query: { facility: string; location?: string; encounter?: string; nutrition_order?: string }) => {
     return await request<PaginatedResponse<NutritionIntake>>(
       `/api/care_diet/intake-logs/${queryString(query)}`
     );

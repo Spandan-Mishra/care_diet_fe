@@ -27,10 +27,19 @@ const NutritionOrdersTabInner: React.FC<PluginEncounterTabProps> = ({ encounter,
     queryFn: () => dietApi.listEncounterNutritionOrders({ encounter: encounter.id }),
   });
 
-  if (isLoading) return <div className="p-4">Loading Nutrition Orders...</div>;
+  const { data: intakeLogsData, isLoading: intakeLogsLoading } = useQuery({
+    queryKey: ["intake_logs", encounter.id],
+    queryFn: () => dietApi.listIntakeLogs({ 
+      facility: facilityId, 
+      encounter: encounter.id 
+    }),
+  });
+
+  if (isLoading || intakeLogsLoading) return <div className="p-4">Loading Nutrition Orders...</div>;
   if (isError) return <div className="p-4 text-red-600">Error: {error.message}</div>;
 
   const orders = data?.results || [];
+  const intakeLogs = intakeLogsData?.results || [];
 
   return (
     <div className="diet-container p-4">
@@ -58,6 +67,7 @@ const NutritionOrdersTabInner: React.FC<PluginEncounterTabProps> = ({ encounter,
               facilityId={facilityId}
               patientId={patient.id}
               encounterId={encounter.id}
+              encounterIntakeLogs={intakeLogs}
             />
           ))}
         </div>

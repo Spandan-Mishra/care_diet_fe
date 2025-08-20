@@ -93,6 +93,7 @@ const IntakeLoggingModal: React.FC<IntakeLoggingModalProps> = ({
       patient: nutritionOrder.patient.id || nutritionOrder.patient,
       encounter: nutritionOrder.encounter.id || nutritionOrder.encounter,
       facility: facilityId,
+      // nutrition_order: nutritionOrder.id, // We can add this back later when the backend supports it
       service_type: "food",
       status: data.status,
       status_reason: data.status_reason || "",

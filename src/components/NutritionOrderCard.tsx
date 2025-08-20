@@ -1,12 +1,10 @@
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Eye, FileText, ChevronDown, ChevronUp } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-import { dietApi } from "../api/dietApi";
 import IntakeLoggingModal from "./IntakeLoggingModal";
 
 const STATUS_COLORS = {
@@ -22,44 +20,39 @@ interface NutritionOrderCardProps {
   facilityId: string;
   patientId: string;
   encounterId: string;
+  encounterIntakeLogs?: any[]; // Pass intake logs from parent
 }
 
 const NutritionOrderCard: React.FC<NutritionOrderCardProps> = ({ 
   order, 
-  facilityId 
+  facilityId,
+  encounterIntakeLogs = [] 
 }) => {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isIntakeModalOpen, setIsIntakeModalOpen] = useState(false);
 
-  // Fetch intake logs for this nutrition order
-  const { data: intakeLogs, isLoading: isLoadingIntakes, error: intakeLogsError } = useQuery({
-    queryKey: ["intake_logs", order.id],
-    queryFn: () => {
-      console.log("Fetching intake logs for:", { 
-        facility: facilityId, 
-        nutrition_order: order.id 
-      });
-      return dietApi.listIntakeLogs({ 
-        facility: facilityId,
-        nutrition_order: order.id
-      });
-    },
-    enabled: isDetailsOpen,
-    retry: 1,
-  });
+  // Filter intake logs that are related to this nutrition order
+  // We can filter by time proximity, products, or just show all encounter logs
+  const relevantIntakeLogs = React.useMemo(() => {
+    if (!encounterIntakeLogs || encounterIntakeLogs.length === 0) return [];
+    
+    // For now, show all intake logs for the encounter
+    // You can enhance this later to filter by:
+    // - Time proximity to the order
+    // - Product matching
+    // - Or other business logic
+    return encounterIntakeLogs.filter(log => {
+      // Only show logs that occurred after this order was created
+      if (order.datetime && log.occurrence_datetime) {
+        const orderTime = new Date(order.datetime).getTime();
+        const logTime = new Date(log.occurrence_datetime).getTime();
+        return logTime >= orderTime;
+      }
+      return true;
+    }).slice(0, 5); // Show max 5 recent logs to avoid clutter
+  }, [encounterIntakeLogs, order]);
 
-  // Add debugging logs
-  React.useEffect(() => {
-    if (intakeLogs) {
-      console.log("Successfully fetched intake logs:", intakeLogs);
-    }
-    if (intakeLogsError) {
-      console.error("Error fetching intake logs:", intakeLogsError);
-    }
-  }, [intakeLogs, intakeLogsError]);
-
-  console.log("Intake logs data:", intakeLogs);
-  console.log("Intake logs error:", intakeLogsError);
+  console.log("Relevant intake logs for order:", order.id, relevantIntakeLogs);
 
   const formatStatus = (status: string) => {
     return status.replace(/-/g, " ").replace(/\b\w/g, l => l.toUpperCase());
@@ -171,16 +164,10 @@ const NutritionOrderCard: React.FC<NutritionOrderCardProps> = ({
 
               {/* Intake Logs */}
               <div>
-                <h4 className="font-medium text-gray-900 mb-2">Intake Logs</h4>
-                {isLoadingIntakes ? (
-                  <div className="text-sm text-gray-500">Loading intake logs...</div>
-                ) : intakeLogsError ? (
-                  <div className="text-sm text-red-600">
-                    Error loading intake logs: {intakeLogsError.message}
-                  </div>
-                ) : intakeLogs && (intakeLogs as any)?.results && (intakeLogs as any).results.length > 0 ? (
+                <h4 className="font-medium text-gray-900 mb-2">Recent Intake Logs</h4>
+                {relevantIntakeLogs.length > 0 ? (
                   <div className="space-y-2">
-                    {(intakeLogs as any).results.map((log: any, index: number) => (
+                    {relevantIntakeLogs.map((log: any, index: number) => (
                       <div key={log.id || index} className="border rounded p-3 bg-gray-50">
                         <div className="flex justify-between items-start mb-2">
                           <Badge className={STATUS_COLORS[log.status as keyof typeof STATUS_COLORS] || "bg-gray-100 text-gray-800"}>
@@ -200,7 +187,7 @@ const NutritionOrderCard: React.FC<NutritionOrderCardProps> = ({
                             <span className="font-medium">Items consumed:</span>
                             <ul className="list-disc list-inside ml-2">
                               {log.intake_items.map((item: any, i: number) => (
-                                <li key={i}>{item.name}: {item.quantity}</li>
+                                <li key={i}>{item.name || `Product ${item.product_id}`}: {item.quantity}</li>
                               ))}
                             </ul>
                           </div>
@@ -217,7 +204,7 @@ const NutritionOrderCard: React.FC<NutritionOrderCardProps> = ({
                     ))}
                   </div>
                 ) : (
-                  <div className="text-sm text-gray-500">No intake logs found</div>
+                  <div className="text-sm text-gray-500">No recent intake logs found</div>
                 )}
               </div>
             </div>
