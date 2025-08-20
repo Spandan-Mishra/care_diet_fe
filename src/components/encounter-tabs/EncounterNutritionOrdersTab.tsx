@@ -9,6 +9,7 @@ import { I18NNAMESPACE } from "../../types/namespace";
 import { Button } from "@/components/ui/button";
 import { navigate } from "raviger";
 import { PlusIcon } from "lucide-react";
+import NutritionOrderCard from "../NutritionOrderCard";
 
 const nutritionTabQueryClient = new QueryClient();
 
@@ -21,7 +22,7 @@ const NutritionOrdersTabInner: React.FC<PluginEncounterTabProps> = ({ encounter,
   const { t } = useTranslation(I18NNAMESPACE);
   const facilityId = encounter.facility.id;
 
-  const { data, isLoading, isError, error, refetch } = useQuery({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ["nutrition_orders", encounter.id],
     queryFn: () => dietApi.listEncounterNutritionOrders({ encounter: encounter.id }),
   });
@@ -30,7 +31,6 @@ const NutritionOrdersTabInner: React.FC<PluginEncounterTabProps> = ({ encounter,
   if (isError) return <div className="p-4 text-red-600">Error: {error.message}</div>;
 
   const orders = data?.results || [];
-  console.log(orders);
 
   return (
     <div className="diet-container p-4">
@@ -52,26 +52,13 @@ const NutritionOrdersTabInner: React.FC<PluginEncounterTabProps> = ({ encounter,
       ) : (
         <div className="space-y-4">
           {orders.map((order) => (
-            <Card key={order.id} className="overflow-hidden">
-              <CardContent className="p-4 grid grid-cols-1 md:grid-cols-4 gap-2">
-                <div>
-                  <p className="text-sm font-semibold text-gray-700">Products</p>
-                  <p className="text-sm">{order.products.map((p) => p.name).join(", ") || "N/A"}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-700">Status</p>
-                  <p className="text-sm capitalize">{order.status}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-700">Prescribed On</p>
-                  <p className="text-sm">{order.datetime}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-700">Prescribed By</p>
-                  <p className="text-sm">{order.prescribed_by || "N/A"}</p>
-                </div>
-              </CardContent>
-            </Card>
+            <NutritionOrderCard
+              key={order.id}
+              order={order}
+              facilityId={facilityId}
+              patientId={patient.id}
+              encounterId={encounter.id}
+            />
           ))}
         </div>
       )}

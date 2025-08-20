@@ -17,9 +17,6 @@ const manifest = {
     LocationCanteenDashboard: lazy(
       () => import("./pages/LocationCanteenDashboard")
     ),
-    IntakeLogging: lazy(
-      () => import("./pages/IntakeLogging")
-    ),
   },
   encounterTabs: {
     nutrition_orders: lazy(() => import("./components/encounter-tabs/EncounterNutritionOrdersTab")),

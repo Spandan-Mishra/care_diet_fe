@@ -14,11 +14,27 @@ export class APIError extends Error {
   }
 }
 
+// Get the API URL 
+function getApiUrl(): string {
+  // For development, use localhost to avoid CORS issues
+  if (import.meta.env.DEV) {
+    return "http://localhost:9000";
+  }
+  
+  // For production, try to get from the core app's careConfig
+  if (typeof window !== 'undefined' && (window as any).careConfig?.apiUrl) {
+    return (window as any).careConfig.apiUrl;
+  }
+  
+  // Fallback to environment variable or default
+  return import.meta.env.REACT_CARE_API_URL || "";
+}
+
 export async function request<Response>(
   path: string,
   options?: RequestInit
 ): Promise<Response> {
-  const url = `${(window as any).__CORE_ENV__?.apiUrl || ""}${path}`;
+  const url = `${getApiUrl()}${path}`;
 
   const defaultHeaders = {
     Authorization: `Bearer ${localStorage.getItem(
