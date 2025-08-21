@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { dietApi, type NutritionProductCreate } from "../../api/dietApi";
+import { type ValueSetCoding } from "../../api/valuesetApi";
+import AllergenMultiSelect from "../../components/ui/allergen-multi-select";
 
 const EDIT_ROUTE = "/facility/:facilityId/settings/nutrition_products/:productId/edit";
 const CREATE_ROUTE = "/facility/:facilityId/settings/nutrition_products/new";
@@ -24,7 +26,11 @@ const formSchema = z.object({
   calories: z.coerce.number().int().min(0, "Must be a positive number"),
   status: z.enum(["active", "inactive", "entered-in-error"]),
   location: z.string().uuid("A valid Canteen Location UUID must be provided"),
-  allergens: z.string().optional(),
+  allergens: z.array(z.object({
+    system: z.string(),
+    code: z.string(),
+    display: z.string(),
+  })).default([]),
   note: z.string().optional(),
 });
 
@@ -46,11 +52,11 @@ const NutritionProductForm: React.FC = () => {
     enabled: isEditMode,
   });
 
-  const form = useForm<ProductFormData>({
+  const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: { 
-      status: "active", 
-      allergens: "",
+      status: "active" as const, 
+      allergens: [] as ValueSetCoding[],
       name: "",
       code: "",
       quantity: "",
@@ -62,6 +68,24 @@ const NutritionProductForm: React.FC = () => {
 
   useEffect(() => {
     if (existingData) {
+      // Convert legacy allergen data to valueset format if needed
+      let allergens: ValueSetCoding[] = [];
+      if (existingData.allergens) {
+        if (Array.isArray(existingData.allergens) && existingData.allergens.length > 0) {
+          // Check if it's already in the new format (ValueSetCoding objects)
+          if (typeof existingData.allergens[0] === 'object' && 'system' in existingData.allergens[0]) {
+            allergens = existingData.allergens as ValueSetCoding[];
+          } else {
+            // Legacy format: convert string array to placeholder coding objects
+            allergens = (existingData.allergens as unknown as string[]).map(allergen => ({
+              system: "legacy",
+              code: allergen.toLowerCase().replace(/\s+/g, "-"),
+              display: allergen
+            }));
+          }
+        }
+      }
+
       form.reset({
         name: existingData.name,
         code: existingData.code,
@@ -69,7 +93,7 @@ const NutritionProductForm: React.FC = () => {
         calories: existingData.calories,
         status: existingData.status,
         location: existingData.location,
-        allergens: existingData.allergens?.join(", ") || "",
+        allergens,
         note: existingData.note ?? undefined,
       });
     }
@@ -91,12 +115,12 @@ const NutritionProductForm: React.FC = () => {
     },
   });
 
-  const onSubmit = (data: z.infer<typeof formSchema>) => {
+  const onSubmit = (data: ProductFormData) => {
     if (!facilityId) return;
 
     const payload: NutritionProductCreate = {
       ...data,
-      allergens: data.allergens ? data.allergens.split(',').map((item : string) => item.trim()) : [],
+      allergens: data.allergens,
       note: data.note || null,
       facility: facilityId,
       service_type: "food",
@@ -153,7 +177,16 @@ const NutritionProductForm: React.FC = () => {
               <CardHeader><CardTitle>Additional Details</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <FormField name="allergens" render={({ field }) => (
-                    <FormItem><FormLabel>Allergens</FormLabel><FormControl><Input placeholder="e.g., gluten, nuts, soy" {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem>
+                    <FormControl>
+                      <AllergenMultiSelect
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Select allergens from medical terminology..."
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}/>
                 <FormField name="note" render={({ field }) => (
                     <FormItem><FormLabel>Notes</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>

@@ -12,6 +12,19 @@ export interface PaginatedResponse<T> {
 
 export type NutritionOrderCreate = Omit<NutritionOrder, "id" | "prescribed_by" | "products"> & {
   products: string[];
+  patient_allergies?: Array<{
+    id: string;
+    code: {
+      display: string;
+      system: string;
+      code: string;
+    };
+    category: "food" | "medication" | "environment" | "biologic";
+    criticality: "low" | "high" | "unable_to_assess";
+    clinical_status: "active" | "inactive" | "resolved";
+    verification_status: string;
+    captured_at: string;
+  }>;
 };
 export type CanteenOrderUpdate = Pick<NutritionOrder, "status">;
 export type NutritionIntakeCreate = Omit<NutritionIntake, "id" | "logged_by">;

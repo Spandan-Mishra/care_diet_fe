@@ -52,8 +52,6 @@ const NutritionOrderCard: React.FC<NutritionOrderCardProps> = ({
     }).slice(0, 5); // Show max 5 recent logs to avoid clutter
   }, [encounterIntakeLogs, order]);
 
-  console.log("Relevant intake logs for order:", order.id, relevantIntakeLogs);
-
   const formatStatus = (status: string) => {
     return status.replace(/-/g, " ").replace(/\b\w/g, l => l.toUpperCase());
   };

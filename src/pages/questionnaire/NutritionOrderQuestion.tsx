@@ -4,10 +4,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { dietApi, type NutritionOrderCreate } from "../../api/dietApi";
+import { allergyApi } from "../../api/allergyApi";
 import { type NutritionProduct } from "../../types/nutrition_product";
 import { request, queryString } from "../../api/request";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Form,
   FormField,
@@ -25,6 +27,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { 
+  CheckCircle2,
+  ShieldAlert
+} from "lucide-react";
 import Autocomplete from "../../components/ui/autocomplete";
 
 interface Location {
@@ -78,6 +84,21 @@ const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
   const queryClient = useQueryClient();
   const [productSearch, setProductSearch] = useState("");
   const [selectedProducts, setSelectedProducts] = useState<NutritionProduct[]>([]);
+
+  // Fetch patient allergies to display during order creation
+  const { data: patientAllergies, isLoading: isLoadingAllergies } = useQuery({
+    queryKey: ["patient_allergies", patientId],
+    queryFn: () => allergyApi.getPatientAllergies(patientId, {
+      excludeVerificationStatus: "entered_in_error",
+      limit: 50
+    }),
+    select: (data) => data.results.filter(allergy => 
+      allergy.clinical_status === "active" && 
+      allergy.verification_status !== "refuted"
+    ),
+  });
+
+  console.log(patientAllergies);
 
   const { data: productsData, isLoading: isLoadingProducts } = useQuery({
     queryKey: ["nutrition_products_search", facilityId, productSearch],
@@ -149,6 +170,18 @@ const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
       alert("Please add at least one nutrition product.");
       return;
     }
+
+    // Prepare patient allergies for point-in-time capture
+    const capturedAllergies = patientAllergies?.map(allergy => ({
+      id: allergy.id,
+      code: allergy.code,
+      category: allergy.category,
+      criticality: allergy.criticality,
+      clinical_status: allergy.clinical_status,
+      verification_status: allergy.verification_status,
+      captured_at: new Date().toISOString(), // Current timestamp for when allergies were captured
+    })) || [];
+
     const payload: NutritionOrderCreate = {
       patient: patientId,
       encounter: encounterId,
@@ -163,12 +196,72 @@ const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
       },
       note: data.note || null,
       service_type: "food",
+      patient_allergies: capturedAllergies, // Include point-in-time allergies
     };
     createOrder(payload);
   };
 
   return (
     <div className="diet-container space-y-4 border p-4 rounded-lg mt-2 bg-white">
+      {/* Patient Allergies Warning Section */}
+      {isLoadingAllergies ? (
+        <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p className="text-sm text-yellow-800">Loading patient allergy information...</p>
+        </div>
+      ) : patientAllergies && patientAllergies.length > 0 ? (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-orange-800">
+              <ShieldAlert className="h-5 w-5" />
+              Patient Allergies ({patientAllergies.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <p className="text-sm text-orange-700 mb-3">
+              ⚠️ Please review the patient's known allergies before creating nutrition orders:
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {patientAllergies.map((allergy) => (
+                <div 
+                  key={allergy.id} 
+                  className="flex items-center justify-between p-2 bg-white rounded border border-orange-200"
+                >
+                  <div className="flex-1">
+                    <div className="font-medium text-sm text-gray-900">
+                      {allergy.code.display}
+                    </div>
+                    <div className="flex gap-2 mt-1">
+                      <Badge 
+                        variant={allergy.category === 'food' ? 'destructive' : 'secondary'}
+                        className="text-xs"
+                      >
+                        {allergy.category}
+                      </Badge>
+                      <Badge 
+                        variant={allergy.criticality === 'high' ? 'destructive' : 'outline'}
+                        className="text-xs"
+                      >
+                        {allergy.criticality} risk
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-orange-600 mt-3">
+              These allergies will be automatically captured with this nutrition order for safety tracking.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-green-600" />
+            <p className="text-sm text-green-800">No known allergies on record for this patient.</p>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-2">
         <h3 className="font-semibold">Add Nutrition Products</h3>
         <Autocomplete
