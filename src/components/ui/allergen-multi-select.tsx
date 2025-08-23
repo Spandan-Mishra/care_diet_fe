@@ -41,10 +41,11 @@ export default function AllergenMultiSelect({
   const [search, setSearch] = useState("");
 
   // Fetch allergy codes from system-allergy-code valueset
-  const { data: allergenOptions = [], isLoading } = useQuery({
+  const { data: allergenOptions = [], isLoading, error } = useQuery({
     queryKey: ["system-allergy-codes", search],
     queryFn: () => valuesetApi.getSystemAllergyCodes(search),
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    retry: 1, // Only retry once to avoid too many failed requests
   });
 
   const selectedAllergenCodes = useMemo(
