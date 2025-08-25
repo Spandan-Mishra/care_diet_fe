@@ -15,4 +15,5 @@ export type NutritionIntake = {
   }>;
   occurrence_datetime: string;
   note: string | null;
+  charge_item?: string; // UUID of associated ChargeItem
 };

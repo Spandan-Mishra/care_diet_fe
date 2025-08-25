@@ -31,6 +31,7 @@ const formSchema = z.object({
     code: z.string(),
     display: z.string(),
   })).default([]),
+  charge_item_definition: z.string().optional(),
   note: z.string().optional(),
 });
 
@@ -52,6 +53,13 @@ const NutritionProductForm: React.FC = () => {
     enabled: isEditMode,
   });
 
+  // Fetch ChargeItemDefinitions for billing
+  const { data: chargeItemDefinitions } = useQuery({
+    queryKey: ["charge_item_definitions", facilityId],
+    queryFn: () => dietApi.listChargeItemDefinitions({ facility: facilityId!, status: "active" }),
+    enabled: !!facilityId,
+  });
+
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: { 
@@ -62,6 +70,7 @@ const NutritionProductForm: React.FC = () => {
       quantity: "",
       calories: 0,
       location: canteenLocationId,
+      charge_item_definition: "",
       note: ""
     },
   });
@@ -94,6 +103,7 @@ const NutritionProductForm: React.FC = () => {
         status: existingData.status,
         location: existingData.location,
         allergens,
+        charge_item_definition: existingData.charge_item_definition || "",
         note: existingData.note ?? undefined,
       });
     }
@@ -173,6 +183,37 @@ const NutritionProductForm: React.FC = () => {
                 )}/>
               </CardContent>
             </Card>
+            
+            <Card>
+              <CardHeader><CardTitle>Billing Configuration</CardTitle></CardHeader>
+              <CardContent>
+                <FormField name="charge_item_definition" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Charge Item Definition (Optional)</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select billing definition for this product" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">No billing (free item)</SelectItem>
+                        {chargeItemDefinitions?.results?.map((definition) => (
+                          <SelectItem key={definition.id} value={definition.id}>
+                            {definition.title} - {definition.slug}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="text-sm text-gray-600">
+                      Select a charge definition to enable billing for this nutrition product
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}/>
+              </CardContent>
+            </Card>
+            
             <Card>
               <CardHeader><CardTitle>Additional Details</CardTitle></CardHeader>
               <CardContent className="space-y-4">
