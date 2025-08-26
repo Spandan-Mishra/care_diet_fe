@@ -43,11 +43,21 @@ export async function request<Response>(
         data = await response.json();
     } catch (e) {
         console.error("Response was not valid JSON.", e);
+        // If we can't parse the JSON, throw a more specific error
+        if (!response.ok) {
+            throw new APIError(
+                `Failed to parse response from server: ${response.statusText}`,
+                null,
+                response.status
+            );
+        }
     }
   }
 
   if (!response.ok) {
-    const errorMessage = data?.detail || JSON.stringify(data) || "Something went wrong";
+    const errorMessage = data?.detail || 
+                         (data ? JSON.stringify(data) : response.statusText) || 
+                         "Something went wrong";
     throw new APIError(
       errorMessage,
       data,

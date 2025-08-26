@@ -101,7 +101,7 @@ export const dietApi = {
   // Billing-related functions
   listChargeItemDefinitions: async (query: { facility: string; status?: string }) => {
     return await request<PaginatedResponse<ChargeItemDefinition>>(
-      `/api/v1/charge_item_definition/${queryString(query)}`
+      `/api/care_diet/charge_item_definition/${queryString(query)}`
     );
   },
 
