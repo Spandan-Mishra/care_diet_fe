@@ -107,7 +107,7 @@ export const dietApi = {
 
   listChargeItems: async (query: { facility: string; service_resource?: string; service_resource_id?: string }) => {
     return await request<PaginatedResponse<ChargeItem>>(
-      `/api/v1/charge_item/${queryString(query)}`
+      `/api/care_diet/charge_item/${queryString(query)}`
     );
   },
 };

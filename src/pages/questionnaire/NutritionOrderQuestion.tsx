@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { dietApi, type NutritionOrderCreate } from "../../api/dietApi";
+import { dietApi } from "../../api/dietApi";
 import { allergyApi } from "../../api/allergyApi";
 import { type NutritionProduct } from "../../types/nutrition_product";
 import { request, queryString } from "../../api/request";
@@ -81,7 +81,6 @@ const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
   question,
   updateQuestionnaireResponseCB,
 }) => {
-  const queryClient = useQueryClient();
   const [productSearch, setProductSearch] = useState("");
   const [selectedProducts, setSelectedProducts] = useState<NutritionProduct[]>([]);
 
@@ -97,8 +96,6 @@ const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
       allergy.verification_status !== "refuted"
     ),
   });
-
-  console.log(patientAllergies);
 
   const { data: productsData, isLoading: isLoadingProducts } = useQuery({
     queryKey: ["nutrition_products_search", facilityId, productSearch],
@@ -142,18 +139,6 @@ const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
     [locations],
   );
 
-  const { mutate: createOrder, isPending } = useMutation({
-    mutationFn: dietApi.createMealOrder,
-    onSuccess: (data) => {
-      updateQuestionnaireResponseCB([{ type: "structured", value: data.id }], question.id);
-      alert("Nutrition Order created successfully!");
-      queryClient.invalidateQueries({ queryKey: ["nutrition_orders", encounterId] });
-      setSelectedProducts([]);
-      form.reset();
-    },
-    onError: (error: Error) => alert(error.message),
-  });
-
   const addProduct = (productId: string) => {
     const product = productsData?.find(p => p.id === productId);
     if (product && !selectedProducts.some(p => p.id === product.id)) {
@@ -182,9 +167,8 @@ const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
       captured_at: new Date().toISOString(), // Current timestamp for when allergies were captured
     })) || [];
 
-    const payload: NutritionOrderCreate = {
-      patient: patientId,
-      encounter: encounterId,
+    // Create the nutrition order data for structured questionnaire submission
+    const nutritionOrderData = {
       facility: facilityId,
       location: data.location,
       products: selectedProducts.map(p => p.id),
@@ -198,7 +182,14 @@ const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
       service_type: "food",
       patient_allergies: capturedAllergies, // Include point-in-time allergies
     };
-    createOrder(payload);
+
+    updateQuestionnaireResponseCB([{ type: "structured", value: [nutritionOrderData] }], question.id);
+    
+    // Reset form and selected products
+    setSelectedProducts([]);
+    form.reset();
+    
+    alert("Nutrition Order data has been added to the questionnaire!");
   };
 
   return (
@@ -333,8 +324,8 @@ const NutritionOrderQuestion: React.FC<NutritionOrderQuestionProps> = ({
                 )}/>
               </div>
               <div className="flex justify-end gap-2 mt-4">
-                  <Button type="submit" className="text-white" disabled={isPending}>
-                      {isPending ? "Saving..." : "Save Nutrition Order"}
+                  <Button type="submit" className="text-white">
+                      Save Nutrition Order
                   </Button>
               </div>
             </form>
