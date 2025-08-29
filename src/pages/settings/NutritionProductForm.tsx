@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { navigate, usePathParams } from "raviger";
 import { useForm } from "react-hook-form";
@@ -13,11 +13,32 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { dietApi, type NutritionProductCreate } from "../../api/dietApi";
 import { type ValueSetCoding } from "../../api/valuesetApi";
 import AllergenMultiSelect from "../../components/ui/allergen-multi-select";
+import { request, queryString } from "../../api/request";
+
+interface Location {
+  id: string;
+  name: string;
+}
+
+const locationApi = {
+  list: async (facilityId: string): Promise<Location[]> => {
+    try {
+      const response = await request<{results: Location[]}>(`/api/v1/facility/${facilityId}/location/${queryString({ limit: 100 })}`);
+      return response.results;
+    } catch (error) {
+      console.error("Failed to fetch locations:", error);
+      return [
+        { id: "main-kitchen", name: "Main Kitchen" },
+        { id: "north-canteen", name: "North Canteen" },
+        { id: "south-canteen", name: "South Canteen" },
+        { id: "central-kitchen", name: "Central Kitchen" },
+      ];
+    }
+  },
+};
 
 const EDIT_ROUTE = "/facility/:facilityId/settings/nutrition_products/:productId/edit";
 const CREATE_ROUTE = "/facility/:facilityId/settings/nutrition_products/new";
-
-const canteenLocationId = "77a8b1ac-fdff-4f14-a112-09ae58c220b4";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -25,13 +46,13 @@ const formSchema = z.object({
   quantity: z.string().min(1, "Serving Size is required"),
   calories: z.coerce.number().int().min(0, "Must be a positive number"),
   status: z.enum(["active", "inactive", "entered-in-error"]),
-  location: z.string().uuid("A valid Canteen Location UUID must be provided"),
+  location: z.string().uuid("A valid Location UUID must be provided"),
   allergens: z.array(z.object({
     system: z.string(),
     code: z.string(),
     display: z.string(),
   })).default([]),
-  charge_item_definition: z.union([z.string(), z.undefined()]).default("none"),
+  charge_item_definition: z.union([z.string().uuid(), z.literal("none"), z.null()]).default("none"),
   note: z.string().optional(),
 });
 
@@ -46,6 +67,13 @@ const NutritionProductForm: React.FC = () => {
   const isEditMode = !!productId;
   
   const queryClient = useQueryClient();
+
+  // Fetch facility locations
+  const { data: facilityLocations } = useQuery({
+    queryKey: ["facility_locations", facilityId],
+    queryFn: () => locationApi.list(facilityId!),
+    enabled: !!facilityId,
+  });
 
   const { data: existingData, isLoading: isDataLoading } = useQuery({
     queryKey: ["nutrition_product", productId],
@@ -62,6 +90,15 @@ const NutritionProductForm: React.FC = () => {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
+  const locationOptions = useMemo(
+    () =>
+      facilityLocations?.map((location: Location) => ({
+        label: location.name,
+        value: location.id,
+      })) || [],
+    [facilityLocations],
+  );
+
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: { 
@@ -71,7 +108,7 @@ const NutritionProductForm: React.FC = () => {
       code: "",
       quantity: "",
       calories: 0,
-      location: canteenLocationId,
+      location: "", // Will be set when locations are loaded
       charge_item_definition: "none", // Use "none" as default value instead of empty string
       note: ""
     },
@@ -111,6 +148,14 @@ const NutritionProductForm: React.FC = () => {
     }
   }, [existingData, form]);
 
+  // Set default location for new products when locations are loaded
+  useEffect(() => {
+    if (!isEditMode && locationOptions && locationOptions.length > 0 && !form.getValues("location")) {
+      // Set the first available location as default for new products
+      form.setValue("location", locationOptions[0].value);
+    }
+  }, [locationOptions, isEditMode, form]);
+
   const { mutate: createOrUpdateProduct, isPending, error: mutationError } = useMutation({
     mutationFn: (data: NutritionProductCreate) => {
       return isEditMode
@@ -130,12 +175,24 @@ const NutritionProductForm: React.FC = () => {
   const onSubmit = (data: ProductFormData) => {
     if (!facilityId) return;
 
+    // Validate location is selected and valid
+    if (!data.location || data.location === "no_locations") {
+      alert("Please select a valid facility location");
+      return;
+    }
+
+    // Validate that the selected location exists in the available locations
+    if (locationOptions && !locationOptions.some((loc) => loc.value === data.location)) {
+      alert("Selected location is no longer available. Please select a different location.");
+      return;
+    }
+
     // Process the form data before submitting
     let charge_item_definition = data.charge_item_definition;
     
-    // Handle special case values
+    // Handle special case values - send null instead of "none" for backend
     if (["none", "loading", "error", "no_definitions"].includes(charge_item_definition || "")) {
-      charge_item_definition = "none";
+      charge_item_definition = null;
     }
 
     const payload: NutritionProductCreate = {
@@ -185,6 +242,23 @@ const NutritionProductForm: React.FC = () => {
                       </SelectContent>
                     </Select>
                   <FormMessage /></FormItem>
+                )}/>
+                <FormField name="location" render={({ field }) => (
+                  <FormItem><FormLabel>Location *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Select location" /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        {locationOptions.map((location: {label: string, value: string}) => (
+                          <SelectItem key={location.value} value={location.value}>
+                            {location.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="text-sm text-gray-600">
+                      Select the facility location where this nutrition product will be available
+                    </div>
+                    <FormMessage /></FormItem>
                 )}/>
                  <FormField name="calories" render={({ field }) => (
                   <FormItem><FormLabel>Calories (kcal)*</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
@@ -250,14 +324,20 @@ const NutritionProductForm: React.FC = () => {
                 <FormField name="note" render={({ field }) => (
                     <FormItem><FormLabel>Notes</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
                 )}/>
-                <FormField name="location" render={({ field }) => (
-                  <input type="hidden" {...field} />
-                )}/>
               </CardContent>
             </Card>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => navigate(`/facility/${facilityId}/settings/nutrition_products`)}>Cancel</Button>
-              <Button className="text-white" type="submit" disabled={isPending}>{isPending ? "Saving..." : "Save Product"}</Button>
+              <Button 
+                className="text-white" 
+                type="submit" 
+                disabled={isPending || !locationOptions || locationOptions.length === 0}
+              >
+                {isPending ? "Saving..." : 
+                 !locationOptions ? "Loading..." :
+                 locationOptions.length === 0 ? "No locations available" :
+                 "Save Product"}
+              </Button>
             </div>
           </form>
         </Form>
