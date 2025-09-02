@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 
 import { dietApi, type NutritionIntakeCreate } from "../api/dietApi";
 
@@ -70,15 +69,8 @@ const IntakeLoggingModal: React.FC<IntakeLoggingModalProps> = ({
 
   const createIntakeMutation = useMutation({
     mutationFn: (data: NutritionIntakeCreate) => dietApi.createIntakeLog(data),
-    onSuccess: (newIntake) => {
+    onSuccess: () => {
       toast.success("Intake log created successfully");
-      
-      // Check if a charge item was created
-      if (newIntake.charge_item) {
-        toast.success("Billing record created for intake", {
-          description: "This intake has been billed to the patient's account",
-        });
-      }
       
       queryClient.invalidateQueries({ queryKey: ["nutrition_orders"] });
       queryClient.invalidateQueries({ queryKey: ["intake_logs"] });
@@ -143,30 +135,6 @@ const IntakeLoggingModal: React.FC<IntakeLoggingModalProps> = ({
                 <div className="text-sm text-gray-600">
                   {nutritionOrder.products?.map((p: any) => p.name).join(", ") || "N/A"}
                 </div>
-              </div>
-            </div>
-
-            {/* Billing Information */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-sm font-medium text-blue-800">💰 Billing Information</span>
-              </div>
-              <div className="text-sm text-blue-700">
-                {nutritionOrder.products?.some((p: any) => p.charge_item_definition) ? (
-                  <div>
-                    <Badge className="bg-green-100 text-green-800 border-green-300">Billable Product</Badge>
-                    <div className="mt-1">
-                      This intake will be automatically billed if not already covered by the nutrition order.
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <Badge className="bg-gray-100 text-gray-800 border-gray-300">Free Product</Badge>
-                    <div className="mt-1">
-                      No billing will be applied for this nutrition intake.
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 

@@ -1,11 +1,9 @@
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ChevronDown, ChevronUp, AlertTriangle, Receipt, DollarSign } from "lucide-react";
+import { ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { dietApi } from "../api/dietApi";
 import IntakeLoggingModal from "./IntakeLoggingModal";
 
 const STATUS_CONFIG = {
@@ -16,15 +14,6 @@ const STATUS_CONFIG = {
   "completed": { color: "bg-green-500", label: "Completed" },
   "entered-in-error": { color: "bg-red-500", label: "Error" },
   "unknown": { color: "bg-gray-500", label: "Unknown" },
-};
-
-const CHARGE_ITEM_STATUS_CONFIG = {
-  "planned": { color: "bg-blue-500", label: "Planned" },
-  "billable": { color: "bg-indigo-500", label: "Billable" },
-  "not_billable": { color: "bg-yellow-500", label: "Not Billable" },
-  "billed": { color: "bg-green-500", label: "Billed" },
-  "paid": { color: "bg-primary", label: "Paid" },
-  "entered_in_error": { color: "bg-red-500", label: "Error" },
 };
 
 interface NutritionOrderCardProps {
@@ -43,33 +32,12 @@ const NutritionOrderCard: React.FC<NutritionOrderCardProps> = ({
   const [showIntakeModal, setShowIntakeModal] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Fetch charge items for this nutrition order
-  const { data: chargeItems } = useQuery({
-    queryKey: ["charge_items", order.id],
-    queryFn: () => dietApi.listChargeItems({
-      facility: facilityId,
-      service_resource: "nutrition_order",
-      service_resource_id: order.id,
-    }),
-    enabled: !!order.id,
-  });
-
   const statusConfig = STATUS_CONFIG[order.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG["unknown"];
-  const hasChargeItems = chargeItems?.results && chargeItems.results.length > 0;
-  const totalBillingAmount = hasChargeItems ? 
-    chargeItems.results.reduce((sum, item) => sum + (item.total_price || 0), 0) : 0;
 
   // Filter intake logs for this specific order
   const orderIntakeLogs = encounterIntakeLogs.filter(
     log => log.nutrition_order === order.id
   );
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-    }).format(amount);
-  };
 
   const formatDateTime = (dateString: string) => {
     return new Date(dateString).toLocaleString('en-IN', {
@@ -106,12 +74,6 @@ const NutritionOrderCard: React.FC<NutritionOrderCardProps> = ({
                 <Badge className={`${statusConfig.color} text-white text-xs`}>
                   {statusConfig.label}
                 </Badge>
-                {hasChargeItems && (
-                  <Badge variant="outline" className="flex items-center gap-1 text-xs">
-                    <Receipt className="h-3 w-3" />
-                    {formatCurrency(totalBillingAmount)}
-                  </Badge>
-                )}
               </div>
 
               {/* Expand/Collapse Button */}
@@ -169,12 +131,6 @@ const NutritionOrderCard: React.FC<NutritionOrderCardProps> = ({
                             </div>
                           )}
                         </div>
-                        {product.charge_item_definition && (
-                          <Badge variant="outline" className="ml-2">
-                            <DollarSign className="h-3 w-3 mr-1" />
-                            Billable
-                          </Badge>
-                        )}
                       </div>
                     </div>
                   ))}
@@ -204,42 +160,6 @@ const NutritionOrderCard: React.FC<NutritionOrderCardProps> = ({
                                 Billed
                               </Badge>
                             )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {/* Billing Information */}
-              {hasChargeItems && (
-                <>
-                  <div className="border-t border-gray-200 my-4"></div>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-blue-900 flex items-center gap-2">
-                        <Receipt className="h-4 w-4" />
-                        Billing Information
-                      </h4>
-                      <div className="text-lg font-semibold text-blue-900">
-                        {formatCurrency(totalBillingAmount)}
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      {chargeItems.results.map((item: any) => (
-                        <div key={item.id} className="flex justify-between items-center text-sm">
-                          <span className="text-blue-800">{item.title}</span>
-                          <div className="flex items-center gap-2">
-                            <Badge 
-                              variant="outline" 
-                              className={`${CHARGE_ITEM_STATUS_CONFIG[item.status as keyof typeof CHARGE_ITEM_STATUS_CONFIG]?.color || 'bg-gray-500'} text-white text-xs`}
-                            >
-                              {CHARGE_ITEM_STATUS_CONFIG[item.status as keyof typeof CHARGE_ITEM_STATUS_CONFIG]?.label || item.status}
-                            </Badge>
-                            <span className="font-medium text-blue-900">
-                              {formatCurrency(item.total_price || 0)}
-                            </span>
                           </div>
                         </div>
                       ))}

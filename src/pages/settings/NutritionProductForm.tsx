@@ -52,7 +52,6 @@ const formSchema = z.object({
     code: z.string(),
     display: z.string(),
   })).default([]),
-  charge_item_definition: z.union([z.string().uuid(), z.literal("none"), z.null()]).default("none"),
   note: z.string().optional(),
 });
 
@@ -81,15 +80,6 @@ const NutritionProductForm: React.FC = () => {
     enabled: isEditMode,
   });
 
-  // Fetch ChargeItemDefinitions for billing
-  const { data: chargeItemDefinitions, isLoading: isLoadingChargeDefinitions, error: chargeDefError } = useQuery({
-    queryKey: ["charge_item_definitions", facilityId],
-    queryFn: () => dietApi.listChargeItemDefinitions({ facility: facilityId!, status: "active" }),
-    enabled: !!facilityId,
-    retry: 1,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-
   const locationOptions = useMemo(
     () =>
       facilityLocations?.map((location: Location) => ({
@@ -109,7 +99,6 @@ const NutritionProductForm: React.FC = () => {
       quantity: "",
       calories: 0,
       location: "", // Will be set when locations are loaded
-      charge_item_definition: "none", // Use "none" as default value instead of empty string
       note: ""
     },
   });
@@ -142,7 +131,6 @@ const NutritionProductForm: React.FC = () => {
         status: existingData.status,
         location: existingData.location,
         allergens,
-        charge_item_definition: existingData.charge_item_definition || "none",
         note: existingData.note ?? undefined,
       });
     }
@@ -187,21 +175,12 @@ const NutritionProductForm: React.FC = () => {
       return;
     }
 
-    // Process the form data before submitting
-    let charge_item_definition = data.charge_item_definition;
-    
-    // Handle special case values - send null instead of "none" for backend
-    if (["none", "loading", "error", "no_definitions"].includes(charge_item_definition || "")) {
-      charge_item_definition = null;
-    }
-
     const payload: NutritionProductCreate = {
       ...data,
       allergens: data.allergens,
       note: data.note || null,
       facility: facilityId,
       service_type: "food",
-      charge_item_definition,
     };
     createOrUpdateProduct(payload);
   };
@@ -265,43 +244,6 @@ const NutritionProductForm: React.FC = () => {
                 )}/>
                 <FormField name="quantity" render={({ field }) => (
                   <FormItem><FormLabel>Serving Size*</FormLabel><FormControl><Input placeholder="e.g., 1 plate" {...field} /></FormControl><FormMessage /></FormItem>
-                )}/>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader><CardTitle>Billing Configuration</CardTitle></CardHeader>
-              <CardContent>
-                <FormField name="charge_item_definition" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Charge Item Definition (Optional)</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select billing definition for this product" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="none">No billing (free item)</SelectItem>
-                        {isLoadingChargeDefinitions && <SelectItem value="loading">Loading definitions...</SelectItem>}
-                        {chargeDefError && <SelectItem value="error">Error loading definitions</SelectItem>}
-                        {chargeItemDefinitions?.results?.map((definition) => (
-                          <SelectItem key={definition.id} value={definition.id}>
-                            {definition.title} - {definition.slug}
-                          </SelectItem>
-                        ))}
-                        {!isLoadingChargeDefinitions && !chargeDefError && chargeItemDefinitions?.results?.length === 0 && (
-                          <SelectItem value="no_definitions">No billing definitions available</SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                    <div className="text-sm text-gray-600">
-                      {chargeDefError ? 
-                        <span className="text-red-500">Error loading charge definitions. Using no billing for now.</span> : 
-                        "Select a charge definition to enable billing for this nutrition product"}
-                    </div>
-                    <FormMessage />
-                  </FormItem>
                 )}/>
               </CardContent>
             </Card>

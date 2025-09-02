@@ -19,7 +19,6 @@ export type NutritionProduct = {
   facility: string;
   location: string;
   service_type: NutritionProductServiceType;
-  charge_item_definition?: string | null; // UUID of ChargeItemDefinition or null
   created_date: string;
   modified_date: string;
 };

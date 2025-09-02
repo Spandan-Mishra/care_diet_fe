@@ -1,7 +1,6 @@
 import type { NutritionOrder } from "../types/nutrition_order";
 import type { Encounter } from "../types/encounter";
 import type { NutritionIntake } from "../types/nutrition_intake";
-import type { ChargeItemDefinition, ChargeItem } from "../types/billing";
 import { queryString, request } from "./request";
 import type { NutritionProduct } from "../types/nutrition_product";
 export interface PaginatedResponse<T> {
@@ -95,19 +94,6 @@ export const dietApi = {
   listIntakeLogs: async (query: { facility: string; location?: string; encounter?: string; nutrition_order?: string }) => {
     return await request<PaginatedResponse<NutritionIntake>>(
       `/api/care_diet/intake-logs/${queryString(query)}`
-    );
-  },
-
-  // Billing-related functions
-  listChargeItemDefinitions: async (query: { facility: string; status?: string }) => {
-    return await request<PaginatedResponse<ChargeItemDefinition>>(
-      `/api/care_diet/charge_item_definition/${queryString(query)}`
-    );
-  },
-
-  listChargeItems: async (query: { facility: string; service_resource?: string; service_resource_id?: string }) => {
-    return await request<PaginatedResponse<ChargeItem>>(
-      `/api/care_diet/charge_item/${queryString(query)}`
     );
   },
 };
