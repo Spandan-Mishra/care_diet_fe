@@ -192,8 +192,8 @@ const NutritionProductForm: React.FC = () => {
   if (isEditMode && isDataLoading) return <div title="Loading..."><div className="p-4">Loading Form...</div></div>;
 
   return (
-    <div className="diet-container" title={isEditMode ? "Edit Product" : "Create Product"}>
-      <div className="container mx-auto max-w-3xl">
+    <div className="diet-container overflow-visible" title={isEditMode ? "Edit Product" : "Create Product"}>
+      <div className="container mx-auto max-w-3xl overflow-visible">
         <h1 className="text-2xl font-bold mb-4">{isEditMode ? "Edit Nutrition Product" : "Create New Product"}</h1>
         {mutationError && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -201,7 +201,7 @@ const NutritionProductForm: React.FC = () => {
           </div>
         )}
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 overflow-visible">
             <Card>
               <CardHeader><CardTitle>Basic Information</CardTitle></CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -248,17 +248,19 @@ const NutritionProductForm: React.FC = () => {
               </CardContent>
             </Card>
             
-            <Card>
+            <Card className="mb-8">
               <CardHeader><CardTitle>Additional Details</CardTitle></CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 overflow-visible pb-8">
                 <FormField name="allergens" render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="relative overflow-visible mb-6">
                     <FormControl>
-                      <AllergenMultiSelect
-                        value={field.value}
-                        onChange={field.onChange}
-                        placeholder="Select allergens from medical terminology..."
-                      />
+                      <div className="w-full overflow-visible">
+                        <AllergenMultiSelect
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Select allergens from medical terminology..."
+                        />
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

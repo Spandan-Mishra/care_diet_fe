@@ -1,23 +1,10 @@
 "use client"
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import { Check, ChevronsUpDown, X } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { valuesetApi, type ValueSetCoding } from "../../api/valuesetApi";
@@ -30,7 +17,7 @@ interface AllergenMultiSelectProps {
   className?: string;
 }
 
-export default function AllergenMultiSelect({
+function AllergenMultiSelect({
   value = [],
   onChange,
   placeholder = "Select allergens...",
@@ -39,6 +26,7 @@ export default function AllergenMultiSelect({
 }: AllergenMultiSelectProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Fetch allergy codes from system-allergy-code valueset
   const { data: allergenOptions = [], isLoading, error } = useQuery({
@@ -71,18 +59,35 @@ export default function AllergenMultiSelect({
     onChange([]);
   };
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+
+    if (open) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [open]);
+
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn("space-y-2 w-full", className)} ref={dropdownRef}>
       <Label>Allergens</Label>
       
       {/* Selected allergens display */}
       {value.length > 0 && (
-        <div className="flex flex-wrap gap-2 p-2 border rounded-md min-h-[40px] bg-gray-50">
+        <div className="flex flex-wrap gap-2 p-2 border rounded-md min-h-[40px] bg-gray-50 w-full overflow-hidden">
           {value.map((allergen) => (
             <Badge 
               key={allergen.code} 
               variant="secondary" 
-              className="flex items-center gap-1"
+              className="flex items-center gap-1 text-xs"
             >
               {allergen.display}
               {!disabled && (
@@ -90,10 +95,10 @@ export default function AllergenMultiSelect({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-4 w-4 p-0 hover:bg-gray-200"
+                  className="h-3 w-3 p-0 hover:bg-gray-200"
                   onClick={() => handleRemove(allergen.code)}
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-2 w-2" />
                 </Button>
               )}
             </Badge>
@@ -103,7 +108,7 @@ export default function AllergenMultiSelect({
               type="button"
               variant="ghost"
               size="sm"
-              className="h-6 px-2 text-xs"
+              className="h-5 px-2 text-[10px]"
               onClick={handleClearAll}
             >
               Clear all
@@ -114,65 +119,73 @@ export default function AllergenMultiSelect({
 
       {/* Allergen selector */}
       {!disabled && (
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={open}
-              className="w-full justify-between"
-            >
+        <div className="relative">
+          <Button
+            type="button"
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between min-h-[40px] text-left text-sm"
+            onClick={() => setOpen(!open)}
+          >
+            <span className="truncate">
               {value.length === 0 
                 ? placeholder 
                 : `${value.length} allergen${value.length === 1 ? '' : 's'} selected`
               }
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-full p-0" align="start">
-            <Command>
-              <CommandInput
-                placeholder="Search allergens..."
-                value={search}
-                onValueChange={setSearch}
-                className="border-none"
-              />
-              <CommandList className="max-h-[200px] overflow-y-auto">
+            </span>
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+          
+          {open && (
+            <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-gray-200 rounded-md shadow-lg h-[200px] flex flex-col">
+              <div className="p-2 border-b border-gray-200 flex-shrink-0">
+                <input
+                  type="text"
+                  placeholder="Search allergens..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  autoFocus
+                />
+              </div>
+              <div className="flex-1 overflow-y-auto p-1 min-h-0">
                 {isLoading ? (
-                  <div className="py-6 text-center text-sm">Loading allergens...</div>
+                  <div className="py-3 text-center text-xs text-gray-500">Loading allergens...</div>
+                ) : error ? (
+                  <div className="py-3 text-center text-xs text-red-500">
+                    Failed to load allergens. Please try again.
+                  </div>
+                ) : allergenOptions.length === 0 ? (
+                  <div className="py-3 text-center text-xs text-gray-500">No allergens found.</div>
                 ) : (
-                  <CommandEmpty>No allergens found.</CommandEmpty>
-                )}
-                <CommandGroup>
-                  {allergenOptions.map((allergen) => (
-                    <CommandItem
+                  allergenOptions.map((allergen) => (
+                    <div
                       key={allergen.code}
-                      value={allergen.display}
-                      onSelect={() => handleSelect(allergen)}
-                      className="cursor-pointer"
+                      onClick={() => handleSelect(allergen)}
+                      className="flex items-center px-2 py-1.5 hover:bg-gray-100 cursor-pointer rounded text-xs"
                     >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          selectedAllergenCodes.has(allergen.code) 
-                            ? "opacity-100" 
-                            : "opacity-0"
+                      <div className="flex items-center justify-center w-3 h-3 mr-2 flex-shrink-0">
+                        {selectedAllergenCodes.has(allergen.code) && (
+                          <Check className="h-3 w-3 text-blue-600" />
                         )}
-                      />
-                      <div className="flex-1">
-                        <div className="font-medium">{allergen.display}</div>
-                        <div className="text-xs text-gray-500">
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-xs truncate">{allergen.display}</div>
+                        <div className="text-[10px] text-gray-500 truncate">
                           {allergen.system} | {allergen.code}
                         </div>
                       </div>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
 }
+
+export default AllergenMultiSelect;
