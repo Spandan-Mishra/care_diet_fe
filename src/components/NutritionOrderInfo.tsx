@@ -1,6 +1,7 @@
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Badge } from "./ui/badge";
+import { formatAllergens } from "../lib/utils";
 
 interface NutritionOrderInfoProps {
   order: any;
@@ -88,7 +89,7 @@ const NutritionOrderInfo: React.FC<NutritionOrderInfoProps> = ({ order }) => {
                     {product.code && <div>Code: {product.code}</div>}
                     {product.allergens?.length > 0 && (
                       <div className="text-red-600">
-                        <span className="font-medium">Allergens:</span> {product.allergens.join(", ")}
+                        <span className="font-medium">Allergens:</span> {formatAllergens(product.allergens)}
                       </div>
                     )}
                     {product.note && (

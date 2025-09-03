@@ -4,6 +4,7 @@ import { navigate, usePathParams } from "raviger";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { dietApi } from "../../api/dietApi";
+import { formatAllergens } from "../../lib/utils";
 
 const VIEW_ROUTE = "/facility/:facilityId/settings/nutrition_products/:productId";
 
@@ -40,7 +41,10 @@ const pathParams = usePathParams(VIEW_ROUTE);
             <div><p className="text-sm text-gray-500">Calories</p><p>{product.calories} kcal</p></div>
             <div><p className="text-sm text-gray-500">Serving Size</p><p>{product.quantity}</p></div>
             <div><p className="text-sm text-gray-500">Service Type</p><p className="capitalize">{product.service_type}</p></div>
-            <div className="md:col-span-2"><p className="text-sm text-gray-500">Allergens</p><p>{product.allergens.join(', ') || 'None'}</p></div>
+            <div className="md:col-span-2">
+              <p className="text-sm text-gray-500">Allergens</p>
+              <p>{formatAllergens(product.allergens)}</p>
+            </div>
             <div className="md:col-span-2"><p className="text-sm text-gray-500">Notes</p><p>{product.note || 'N/A'}</p></div>
           </CardContent>
         </Card>
