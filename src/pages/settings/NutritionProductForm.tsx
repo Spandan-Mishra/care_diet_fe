@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { dietApi, type NutritionProductCreate } from "../../api/dietApi";
+import { billingApi } from "../../api/billingApi";
 import { type ValueSetCoding } from "../../api/valuesetApi";
 import AllergenMultiSelect from "../../components/ui/allergen-multi-select";
 import { request, queryString } from "../../api/request";
@@ -52,6 +53,7 @@ const formSchema = z.object({
     code: z.string(),
     display: z.string(),
   })).default([]),
+  charge_item_definition: z.string().optional().nullable(),
   note: z.string().optional(),
 });
 
@@ -74,6 +76,13 @@ const NutritionProductForm: React.FC = () => {
     enabled: !!facilityId,
   });
 
+  // Fetch active charge item definitions for billing
+  const { data: chargeItemDefinitions } = useQuery({
+    queryKey: ["charge_item_definitions", facilityId],
+    queryFn: () => billingApi.listChargeItemDefinitions({ facility: facilityId!, status: "active" }),
+    enabled: !!facilityId,
+  });
+
   const { data: existingData, isLoading: isDataLoading } = useQuery({
     queryKey: ["nutrition_product", productId],
     queryFn: () => dietApi.retrieveNutritionProduct(productId!),
@@ -89,12 +98,22 @@ const NutritionProductForm: React.FC = () => {
     [facilityLocations],
   );
 
+  const chargeItemDefinitionOptions = useMemo(
+    () =>
+      chargeItemDefinitions?.results?.map((cid) => ({
+        label: `${cid.title} - ${cid.description || ''}`,
+        value: cid.id,
+      })) || [],
+    [chargeItemDefinitions],
+  );
+
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: { 
       status: "active" as const, 
       allergens: [] as ValueSetCoding[],
       name: "",
+      charge_item_definition: "none",
       code: "",
       quantity: "",
       calories: 0,
@@ -131,6 +150,7 @@ const NutritionProductForm: React.FC = () => {
         status: existingData.status,
         location: existingData.location,
         allergens,
+        charge_item_definition: existingData.charge_item_definition || "none",
         note: existingData.note ?? undefined,
       });
     }
@@ -179,6 +199,7 @@ const NutritionProductForm: React.FC = () => {
       ...data,
       allergens: data.allergens,
       note: data.note || null,
+      charge_item_definition: data.charge_item_definition === "none" || data.charge_item_definition === undefined ? null : data.charge_item_definition,
       facility: facilityId,
       service_type: "food",
     };
@@ -239,6 +260,26 @@ const NutritionProductForm: React.FC = () => {
                     </div>
                     <FormMessage /></FormItem>
                 )}/>
+                
+                <FormField name="charge_item_definition" render={({ field }) => (
+                  <FormItem><FormLabel>Charge Item Definition</FormLabel>
+                    <Select onValueChange={(value) => field.onChange(value === "none" ? null : value)} value={field.value || "none"}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Select charge item definition (optional)" /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">None (No billing)</SelectItem>
+                        {chargeItemDefinitionOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="text-sm text-gray-600">
+                      Select a charge item definition for billing this nutrition product
+                    </div>
+                    <FormMessage /></FormItem>
+                )}/>
+                
                  <FormField name="calories" render={({ field }) => (
                   <FormItem><FormLabel>Calories (kcal)*</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                 )}/>

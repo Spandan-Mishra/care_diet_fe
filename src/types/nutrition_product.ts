@@ -1,3 +1,5 @@
+import { type ChargeItemDefinitionRead } from "../../../../src/types/billing/chargeItemDefinition/chargeItemDefinition";
+
 export type NutritionProductStatus = "active" | "inactive" | "entered-in-error";
 export type NutritionProductServiceType = "food";
 
@@ -19,6 +21,11 @@ export type NutritionProduct = {
   facility: string;
   location: string;
   service_type: NutritionProductServiceType;
+  charge_item_definition: string | null; // UUID of ChargeItemDefinition
   created_date: string;
   modified_date: string;
+};
+
+export type NutritionProductWithChargeItemDefinition = NutritionProduct & {
+  charge_item_definition_details?: ChargeItemDefinitionRead;
 };

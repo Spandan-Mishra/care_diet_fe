@@ -31,7 +31,9 @@ export type NutritionIntakeCreate = Omit<NutritionIntake, "id" | "logged_by">;
 export type NutritionProductCreate = Omit<
   NutritionProduct,
   "id" | "created_date" | "modified_date"
->;
+> & {
+  charge_item_definition?: string | null; // UUID of ChargeItemDefinition
+};
 
 export const dietApi = {
   listNutritionProducts: async (query: { facility: string; search?: string }) => {

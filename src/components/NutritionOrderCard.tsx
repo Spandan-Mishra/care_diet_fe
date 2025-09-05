@@ -1,10 +1,12 @@
 import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
+import { ChevronDown, ChevronUp, AlertTriangle, Receipt } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import IntakeLoggingModal from "./IntakeLoggingModal";
+import { billingApi } from "../api/billingApi";
 
 const STATUS_CONFIG = {
   "draft": { color: "bg-gray-500", label: "Draft" },
@@ -33,6 +35,15 @@ const NutritionOrderCard: React.FC<NutritionOrderCardProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
 
   const statusConfig = STATUS_CONFIG[order.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG["unknown"];
+
+  // Query charge items for this nutrition order
+  const { data: chargeItemsData } = useQuery({
+    queryKey: ["chargeItems", "nutrition_order", order.id],
+    queryFn: () => billingApi.getNutritionOrderChargeItems(order.id),
+    enabled: !!order.id,
+  });
+
+  const chargeItems = chargeItemsData?.results || [];
 
   // Filter intake logs for this specific order
   const orderIntakeLogs = encounterIntakeLogs.filter(
@@ -160,6 +171,44 @@ const NutritionOrderCard: React.FC<NutritionOrderCardProps> = ({
                                 Billed
                               </Badge>
                             )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Billing Information */}
+              {chargeItems.length > 0 && (
+                <>
+                  <div className="border-t border-gray-200 my-4"></div>
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+                      <Receipt className="w-4 h-4" />
+                      Billing Information
+                    </h4>
+                    <div className="space-y-2">
+                      {chargeItems.map((item: any) => (
+                        <div key={item.id} className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <div className="text-sm font-medium text-blue-900">
+                                {item.title || item.description}
+                              </div>
+                              <div className="text-xs text-blue-600 mt-1">
+                                Status: <span className="capitalize">{item.status}</span>
+                                {item.unit_price && (
+                                  <span className="ml-4">Price: ${item.unit_price}</span>
+                                )}
+                                {item.quantity && (
+                                  <span className="ml-2">× {item.quantity}</span>
+                                )}
+                              </div>
+                            </div>
+                            <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800">
+                              {item.status}
+                            </Badge>
                           </div>
                         </div>
                       ))}
