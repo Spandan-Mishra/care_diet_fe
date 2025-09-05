@@ -101,7 +101,7 @@ const NutritionProductForm: React.FC = () => {
   const chargeItemDefinitionOptions = useMemo(
     () =>
       chargeItemDefinitions?.results?.map((cid) => ({
-        label: `${cid.title} - ${cid.description || ''}`,
+        label: cid.title,
         value: cid.id,
       })) || [],
     [chargeItemDefinitions],
